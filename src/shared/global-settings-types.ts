@@ -484,6 +484,8 @@ export type GlobalSettings = NativeChatGlobalSettings & {
   experimentalTwitchChat?: boolean
   /** Channel as typed (name, #name or twitch.tv URL); readers normalize with normalizeTwitchChannel. */
   twitchChatChannel?: string
+  /** Client ID of the streamer's own Twitch app (public client); needed to sign in and send chat. */
+  twitchChatClientId?: string
   /** Experimental: pop-out Kanban dashboard for monitoring and opening agent terminals across worktrees. */
   experimentalAgentDashboardPopout?: boolean
   /** Set after the one-time legacy Agents tab introduction has been acknowledged. */

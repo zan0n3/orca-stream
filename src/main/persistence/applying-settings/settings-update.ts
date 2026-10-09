@@ -20,7 +20,7 @@ import { normalizeUiLanguage } from '../../../shared/ui-language'
 import { normalizeWorktreeVisibilityDefaults } from '../../../shared/external-worktree-visibility'
 import { normalizePRBotAuthorOverrides } from '../../../shared/pr-bot-author-overrides'
 import { normalizeMachineName } from '../../../shared/machine-name'
-import { normalizeStreamOverlayPort } from '../../../shared/stream-overlay'
+import { sanitizeStreamSettingsUpdates } from './stream-settings-sanitization'
 import type { PersistedState } from '../../../shared/persisted-state-types'
 import {
   addMobilePairingCustomAddress,
@@ -79,30 +79,7 @@ export function updateSettings(
   if ('agentSkillSharingEnabled' in updates) {
     sanitizedUpdates.agentSkillSharingEnabled = updates.agentSkillSharingEnabled === true
   }
-  if ('experimentalStreamOverlay' in updates) {
-    sanitizedUpdates.experimentalStreamOverlay = updates.experimentalStreamOverlay === true
-  }
-  if ('streamOverlayPort' in updates) {
-    sanitizedUpdates.streamOverlayPort = normalizeStreamOverlayPort(updates.streamOverlayPort)
-  }
-  // Why: an empty token makes main mint a fresh one; anything else must look like one we generated.
-  if ('streamOverlayToken' in updates) {
-    sanitizedUpdates.streamOverlayToken =
-      typeof updates.streamOverlayToken === 'string' &&
-      /^[A-Za-z0-9_-]{16,128}$/.test(updates.streamOverlayToken)
-        ? updates.streamOverlayToken
-        : ''
-  }
-  if ('experimentalTwitchChat' in updates) {
-    sanitizedUpdates.experimentalTwitchChat = updates.experimentalTwitchChat === true
-  }
-  // Why raw text, not the normalized login: normalizing mid-typing would rewrite the field under the user.
-  if ('twitchChatChannel' in updates) {
-    sanitizedUpdates.twitchChatChannel =
-      typeof updates.twitchChatChannel === 'string'
-        ? updates.twitchChatChannel.trim().slice(0, 200)
-        : ''
-  }
+  sanitizeStreamSettingsUpdates(updates, sanitizedUpdates)
   if ('nestedWorkerMaxDepth' in updates) {
     sanitizedUpdates.nestedWorkerMaxDepth = resolveNestedWorkerMaxDepth({
       nestedWorkerMaxDepth: updates.nestedWorkerMaxDepth

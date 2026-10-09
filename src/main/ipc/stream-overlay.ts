@@ -15,7 +15,12 @@ import {
   StreamOverlayServer,
   type StreamOverlayChatPayload
 } from '../stream-overlay/stream-overlay-server'
-import { getTwitchChatSnapshot, subscribeTwitchChatSnapshots } from './twitch-chat'
+import {
+  getTwitchChatSnapshot,
+  getTwitchStreamStats,
+  subscribeTwitchChatSnapshots,
+  subscribeTwitchStreamStats
+} from './twitch-chat'
 
 const OVERLAY_CHAT_MESSAGE_LIMIT = 50
 const AGENT_PUBLISH_THROTTLE_MS = 250
@@ -42,7 +47,8 @@ function toChatPayload(snapshot: TwitchChatSnapshot | null): StreamOverlayChatPa
       id: message.id,
       name: message.displayName,
       text: message.text,
-      isAction: message.isAction
+      isAction: message.isAction,
+      color: message.color
     }))
   }
 }
@@ -81,6 +87,7 @@ export function registerStreamOverlayHandlers(store: Store): void {
   const overlay = new StreamOverlayServer({
     getChat: () => toChatPayload(getTwitchChatSnapshot()),
     getAgents: getAgentsPayload,
+    getStats: () => ({ stats: getTwitchStreamStats() }),
     onStatusChange: broadcastStatus
   })
 
@@ -104,6 +111,7 @@ export function registerStreamOverlayHandlers(store: Store): void {
   const unsubscribeChat = subscribeTwitchChatSnapshots((snapshot) =>
     overlay.publishChat(toChatPayload(snapshot))
   )
+  const unsubscribeStats = subscribeTwitchStreamStats((stats) => overlay.publishStats({ stats }))
   const unsubscribeAgents = agentHookServer.subscribeStatusChanges(publishAgentsSoon)
   const unsubscribeSettings = store.onSettingsChanged((updates, settings) => {
     if (
@@ -129,6 +137,7 @@ export function registerStreamOverlayHandlers(store: Store): void {
 
   teardown = () => {
     unsubscribeChat()
+    unsubscribeStats()
     unsubscribeAgents()
     unsubscribeSettings()
     clearInterval(refreshTimer)

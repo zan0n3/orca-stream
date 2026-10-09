@@ -12680,7 +12680,7 @@
         "twitchChat": {
           "title": "Twitch chat",
           "description": "Show a Twitch channel’s live chat in the right sidebar.",
-          "copy": "Adds a Twitch Chat tab to the right sidebar. Chat is read anonymously, so no Twitch login is needed.",
+          "copy": "Adds a Twitch Chat tab to the right sidebar. Reading chat needs no login; sign in below to send messages.",
           "toggleLabel": "Toggle Twitch chat",
           "channelLabel": "Channel",
           "channelPlaceholder": "Channel name or twitch.tv link",
@@ -12693,7 +12693,17 @@
             "keywordChat": "chat",
             "keywordStream": "stream",
             "keywordChannel": "channel"
-          }
+          },
+          "signedInAs": "Signed in as {{login}}.",
+          "signOut": "Sign out",
+          "enterCode": "On Twitch, approve the sign-in with this code:",
+          "openTwitch": "Open Twitch",
+          "cancelSignIn": "Cancel",
+          "signIn": "Sign in with Twitch",
+          "chatBackLabel": "Chat as yourself",
+          "clientIdHint": "To send messages, register a Twitch app (Client Type: Public, OAuth redirect http://localhost) and paste its Client ID.",
+          "registerApp": "Register an app",
+          "clientIdPlaceholder": "Client ID"
         },
         "streamOverlay": {
           "statusListening": "Running on port {{port}}.",
@@ -14262,6 +14272,14 @@
             "endHint": "Closes the chat window and runs your stream-stop script.",
             "hint": "Opens the chat window and runs your stream-start script.",
             "failed": "Could not switch stream mode."
+          },
+          "TwitchChatComposer": {
+            "sendFailed": "Could not send the message.",
+            "signInHint": "Sign in to Twitch to chat.",
+            "signIn": "Sign in…",
+            "placeholder": "Chat as {{login}}",
+            "inputLabel": "Chat message",
+            "send": "Send"
           }
         }
       },

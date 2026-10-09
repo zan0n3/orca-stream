@@ -6,7 +6,12 @@ import {
   type StreamOverlayChatMessage,
   type StreamOverlayStatus
 } from '../../shared/stream-overlay'
+import type { TwitchStreamStats } from '../../shared/twitch-chat-types'
 import { STREAM_OVERLAY_SCRIPT, renderStreamOverlayPage } from './stream-overlay-pages'
+import {
+  STREAM_CHAT_DASHBOARD_SCRIPT,
+  renderStreamChatDashboardPage
+} from './stream-chat-dashboard-page'
 
 export type StreamOverlayChatPayload = {
   channel: string | null
@@ -15,6 +20,8 @@ export type StreamOverlayChatPayload = {
 }
 
 export type StreamOverlayAgentsPayload = { agents: StreamOverlayAgent[] }
+
+export type StreamOverlayStatsPayload = { stats: TwitchStreamStats | null }
 
 const MAX_EVENT_CLIENTS = 32
 // Why: OBS keeps sources open for hours; a comment line stops idle proxies/sockets from timing out.
@@ -30,6 +37,7 @@ const SECURITY_HEADERS = {
 type StreamOverlayServerOptions = {
   getChat: () => StreamOverlayChatPayload
   getAgents: () => StreamOverlayAgentsPayload
+  getStats: () => StreamOverlayStatsPayload
   onStatusChange?: (status: StreamOverlayStatus) => void
 }
 
@@ -110,6 +118,10 @@ export class StreamOverlayServer {
     this.writeAll(`event: agents\ndata: ${JSON.stringify(payload)}\n\n`)
   }
 
+  publishStats(payload: StreamOverlayStatsPayload): void {
+    this.writeAll(`event: stats\ndata: ${JSON.stringify(payload)}\n\n`)
+  }
+
   private handle(request: IncomingMessage, response: ServerResponse): void {
     // Why: a Host check defeats DNS-rebinding pages that resolve their own name to 127.0.0.1.
     const host = request.headers.host ?? ''
@@ -126,6 +138,10 @@ export class StreamOverlayServer {
       this.reply(response, 200, 'text/javascript; charset=utf-8', STREAM_OVERLAY_SCRIPT)
       return
     }
+    if (url.pathname === '/overlay/dashboard.js') {
+      this.reply(response, 200, 'text/javascript; charset=utf-8', STREAM_CHAT_DASHBOARD_SCRIPT)
+      return
+    }
     if (!this.isAuthorized(url.searchParams.get('token'))) {
       this.reply(response, 404, 'text/plain', 'Not found')
       return
@@ -136,7 +152,12 @@ export class StreamOverlayServer {
     }
     const page = STREAM_OVERLAY_PAGES.find((name) => url.pathname === `/overlay/${name}`)
     if (page) {
-      this.reply(response, 200, 'text/html; charset=utf-8', renderStreamOverlayPage(page))
+      // Why reader=1: the streamer's own chat window gets the dashboard; OBS sources keep the overlay.
+      const html =
+        page === 'chat' && url.searchParams.get('reader') === '1'
+          ? renderStreamChatDashboardPage()
+          : renderStreamOverlayPage(page)
+      this.reply(response, 200, 'text/html; charset=utf-8', html)
       return
     }
     this.reply(response, 404, 'text/plain', 'Not found')
@@ -166,6 +187,7 @@ export class StreamOverlayServer {
     response.on('close', () => this.clients.delete(response))
     response.write(`event: chat\ndata: ${JSON.stringify(this.options.getChat())}\n\n`)
     response.write(`event: agents\ndata: ${JSON.stringify(this.options.getAgents())}\n\n`)
+    response.write(`event: stats\ndata: ${JSON.stringify(this.options.getStats())}\n\n`)
   }
 
   private reply(response: ServerResponse, status: number, contentType: string, body: string): void {

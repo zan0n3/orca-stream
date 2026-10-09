@@ -170,7 +170,8 @@ export class TwitchChatClient {
       displayName: line.tags['display-name'] || login,
       text,
       isAction,
-      sentAt: Number.isFinite(sentAt) && sentAt > 0 ? sentAt : this.now()
+      sentAt: Number.isFinite(sentAt) && sentAt > 0 ? sentAt : this.now(),
+      color: /^#[0-9a-f]{6}$/i.test(line.tags.color ?? '') ? line.tags.color : null
     }
     const next = [...this.messages, message]
     this.messages =

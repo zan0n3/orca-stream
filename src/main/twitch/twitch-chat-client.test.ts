@@ -85,16 +85,26 @@ describe('TwitchChatClient', () => {
         displayName: 'ALICE',
         text: 'hello',
         isAction: false,
-        sentAt: 5000
+        sentAt: 5000,
+        color: null
       },
-      { id: 'b', login: 'bob', displayName: 'BOB', text: 'waves', isAction: true, sentAt: 5000 },
+      {
+        id: 'b',
+        login: 'bob',
+        displayName: 'BOB',
+        text: 'waves',
+        isAction: true,
+        sentAt: 5000,
+        color: null
+      },
       {
         id: 'c',
         login: 'alice',
         displayName: 'ALICE',
         text: 'again',
         isAction: false,
-        sentAt: 5000
+        sentAt: 5000,
+        color: null
       }
     ])
 

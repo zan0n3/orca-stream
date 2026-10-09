@@ -29,7 +29,7 @@ function get(
         // Event streams never end; resolve once the initial events have arrived.
         if (
           res.headers['content-type']?.startsWith('text/event-stream') &&
-          body.includes('event: agents')
+          body.includes('event: stats')
         ) {
           res.destroy()
           resolve({ status: res.statusCode ?? 0, headers: res.headers, body })
@@ -57,10 +57,17 @@ describe('StreamOverlayServer', () => {
         channel: 'chan',
         status: 'connected',
         messages: [
-          { id: '1', name: 'Viewer', text: '<img src=x onerror=alert(1)>', isAction: false }
+          {
+            id: '1',
+            name: 'Viewer',
+            text: '<img src=x onerror=alert(1)>',
+            isAction: false,
+            color: null
+          }
         ]
       }),
-      getAgents: () => ({ agents: [] })
+      getAgents: () => ({ agents: [] }),
+      getStats: () => ({ stats: null })
     })
     server.setToken(TOKEN)
     await server.start(port)
@@ -82,6 +89,15 @@ describe('StreamOverlayServer', () => {
     expect((await get(port, '/overlay/overlay.js')).status).toBe(200)
   })
 
+  it('serves the chat dashboard for reader=1 only', async () => {
+    const port = await startServer()
+    const dashboard = await get(port, `/overlay/chat?token=${TOKEN}&reader=1`)
+    expect(dashboard.status).toBe(200)
+    expect(dashboard.body).toContain('id="composer"')
+    expect(dashboard.body).not.toContain('data-page="chat"')
+    expect((await get(port, '/overlay/dashboard.js')).status).toBe(200)
+  })
+
   it('rejects requests whose Host is not loopback', async () => {
     const port = await startServer()
     const rebound = await get(port, `/overlay/chat?token=${TOKEN}`, `evil.example:${port}`)
@@ -93,6 +109,7 @@ describe('StreamOverlayServer', () => {
     const events = await get(port, `/overlay/events?token=${TOKEN}`)
     expect(events.status).toBe(200)
     expect(events.body).toContain('event: chat')
+    expect(events.body).toContain('event: stats')
     // The raw text travels as JSON data; the page inserts it with textContent.
     expect(events.body).toContain('"text":"<img src=x onerror=alert(1)>"')
   })
@@ -104,7 +121,8 @@ describe('StreamOverlayServer', () => {
 
     const second = new StreamOverlayServer({
       getChat: () => ({ channel: null, status: 'disabled', messages: [] }),
-      getAgents: () => ({ agents: [] })
+      getAgents: () => ({ agents: [] }),
+      getStats: () => ({ stats: null })
     })
     await second.start(port)
     expect(second.getStatus()).toEqual({

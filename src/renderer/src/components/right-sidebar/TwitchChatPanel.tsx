@@ -10,6 +10,8 @@ import type {
 } from '../../../../shared/twitch-chat-types'
 import { useTwitchChatSnapshot } from './use-twitch-chat-snapshot'
 import { StreamModeButton, StreamModeHookError } from './StreamModeButton'
+import { TwitchChatComposer } from './TwitchChatComposer'
+import { useTwitchChatAuth } from './use-twitch-chat-auth'
 
 // Why: within this many px of the bottom still counts as "following" so sub-pixel scroll drift doesn't unstick.
 const STICK_TO_BOTTOM_THRESHOLD_PX = 24
@@ -52,6 +54,7 @@ export default function TwitchChatPanel(): React.JSX.Element {
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
   const openSettingsPage = useAppStore((s) => s.openSettingsPage)
   const snapshot = useTwitchChatSnapshot()
+  const auth = useTwitchChatAuth()
   const scrollRef = useRef<HTMLDivElement>(null)
   const followingRef = useRef(true)
   const [following, setFollowing] = useState(true)
@@ -175,6 +178,7 @@ export default function TwitchChatPanel(): React.JSX.Element {
           </Button>
         ) : null}
       </div>
+      <TwitchChatComposer auth={auth} onSignIn={openChannelSettings} />
     </div>
   )
 }

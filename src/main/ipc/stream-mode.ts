@@ -29,7 +29,9 @@ function openChatWindow(url: string): BrowserWindow {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false,
-      partition: 'stream-chat'
+      partition: 'stream-chat',
+      // Why: exposes only the chat composer (send + sign-in state) to Orca's own chat page.
+      preload: path.join(__dirname, 'stream-chat-window-preload.js')
     }
   })
   // Why: compositor window rules (e.g. Hyprland) match this fixed title to place the window.

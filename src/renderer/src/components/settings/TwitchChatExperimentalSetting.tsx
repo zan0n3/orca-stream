@@ -6,6 +6,7 @@ import { SearchableSetting } from './SearchableSetting'
 import { SettingsSwitch } from './SettingsFormControls'
 import { DebouncedSettingsTextInput } from './DebouncedSettingsTextInput'
 import { getTwitchChatSearchEntry } from './twitch-chat-search-entry'
+import { TwitchChatSignInSetting } from './TwitchChatSignInSetting'
 
 type TwitchChatExperimentalSettingProps = {
   settings: GlobalSettings
@@ -38,7 +39,7 @@ export function TwitchChatExperimentalSetting({
           <p className="text-xs text-muted-foreground">
             {translate(
               'auto.components.settings.twitchChat.copy',
-              'Adds a Twitch Chat tab to the right sidebar. Chat is read anonymously, so no Twitch login is needed.'
+              'Adds a Twitch Chat tab to the right sidebar. Reading chat needs no login; sign in below to send messages.'
             )}
           </p>
         </div>
@@ -52,34 +53,37 @@ export function TwitchChatExperimentalSetting({
         />
       </div>
       {enabled ? (
-        <div className="ml-4 space-y-2 border-l border-border pl-4">
-          <Label htmlFor="twitch-chat-channel">
-            {translate('auto.components.settings.twitchChat.channelLabel', 'Channel')}
-          </Label>
-          <DebouncedSettingsTextInput
-            id="twitch-chat-channel"
-            value={rawChannel}
-            commit={(next) => updateSettings({ twitchChatChannel: next })}
-            placeholder={translate(
-              'auto.components.settings.twitchChat.channelPlaceholder',
-              'Channel name or twitch.tv link'
-            )}
-            spellCheck={false}
-            autoComplete="off"
-            aria-invalid={invalid || undefined}
-            aria-describedby="twitch-chat-channel-description"
-          />
-          <p id="twitch-chat-channel-description" className="text-xs text-muted-foreground">
-            {invalid
-              ? translate(
-                  'auto.components.settings.twitchChat.channelInvalid',
-                  'Use a channel name like “mychannel” or a twitch.tv link.'
-                )
-              : translate(
-                  'auto.components.settings.twitchChat.channelHint',
-                  'Usually your own channel. Changes apply right away.'
-                )}
-          </p>
+        <div className="ml-4 space-y-4 border-l border-border pl-4">
+          <div className="space-y-2">
+            <Label htmlFor="twitch-chat-channel">
+              {translate('auto.components.settings.twitchChat.channelLabel', 'Channel')}
+            </Label>
+            <DebouncedSettingsTextInput
+              id="twitch-chat-channel"
+              value={rawChannel}
+              commit={(next) => updateSettings({ twitchChatChannel: next })}
+              placeholder={translate(
+                'auto.components.settings.twitchChat.channelPlaceholder',
+                'Channel name or twitch.tv link'
+              )}
+              spellCheck={false}
+              autoComplete="off"
+              aria-invalid={invalid || undefined}
+              aria-describedby="twitch-chat-channel-description"
+            />
+            <p id="twitch-chat-channel-description" className="text-xs text-muted-foreground">
+              {invalid
+                ? translate(
+                    'auto.components.settings.twitchChat.channelInvalid',
+                    'Use a channel name like “mychannel” or a twitch.tv link.'
+                  )
+                : translate(
+                    'auto.components.settings.twitchChat.channelHint',
+                    'Usually your own channel. Changes apply right away.'
+                  )}
+            </p>
+          </div>
+          <TwitchChatSignInSetting settings={settings} updateSettings={updateSettings} />
         </div>
       ) : null}
     </SearchableSetting>

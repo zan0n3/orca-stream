@@ -18,6 +18,7 @@ export type StreamOverlayChatMessage = {
   name: string
   text: string
   isAction: boolean
+  color: string | null
 }
 
 export type StreamOverlayStatus =
