@@ -12,6 +12,7 @@ import { NativeChatExperimentalSetting } from './NativeChatExperimentalSetting'
 import { AgentDashboardExperimentalSetting } from './AgentDashboardExperimentalSetting'
 import { EphemeralVmsExperimentalSetting } from './EphemeralVmsExperimentalSetting'
 import { TwitchChatExperimentalSetting } from './TwitchChatExperimentalSetting'
+import { StreamOverlayExperimentalSetting } from './StreamOverlayExperimentalSetting'
 import {
   MAX_AGENT_HIBERNATION_IDLE_MS,
   MIN_AGENT_HIBERNATION_IDLE_MS,
@@ -51,6 +52,9 @@ export function ExperimentalPane({
   ])
   const showTwitchChat = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().twitchChat
+  ])
+  const showStreamOverlay = matchesSettingsSearch(searchQuery, [
+    getExperimentalSearchEntry().streamOverlay
   ])
   const showNewWorktreeCardStyle = matchesSettingsSearch(searchQuery, [
     getExperimentalSearchEntry().newWorktreeCardStyle
@@ -109,6 +113,10 @@ export function ExperimentalPane({
 
       {showTwitchChat ? (
         <TwitchChatExperimentalSetting settings={settings} updateSettings={updateSettings} />
+      ) : null}
+
+      {showStreamOverlay ? (
+        <StreamOverlayExperimentalSetting settings={settings} updateSettings={updateSettings} />
       ) : null}
 
       {showTerminalAttention ? (

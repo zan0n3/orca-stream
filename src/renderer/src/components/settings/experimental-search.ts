@@ -6,6 +6,7 @@ import { getNewWorktreeCardStyleSearchEntry } from './new-worktree-card-style-se
 import { getNativeChatExperimentalSearchEntry } from './native-chat-experimental-search-entry'
 import { getEphemeralVmsSearchEntry } from './ephemeral-vms-search'
 import { getTwitchChatSearchEntry } from './twitch-chat-search-entry'
+import { getStreamOverlaySearchEntry } from './stream-overlay-search-entry'
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
   (): SettingsSearchEntry[] => [
@@ -182,7 +183,8 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
     },
     getNewWorktreeCardStyleSearchEntry(),
     getEphemeralVmsSearchEntry(),
-    getTwitchChatSearchEntry()
+    getTwitchChatSearchEntry(),
+    getStreamOverlaySearchEntry()
   ]
 )
 
@@ -229,6 +231,9 @@ export function getExperimentalSearchEntry() {
     ),
     twitchChat: findEntry(
       translate('auto.components.settings.twitchChat.search.title', 'Twitch chat')
+    ),
+    streamOverlay: findEntry(
+      translate('auto.components.settings.streamOverlay.search.title', 'OBS overlays')
     )
   } as const
 }

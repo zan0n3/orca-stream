@@ -12694,6 +12694,34 @@
             "keywordStream": "stream",
             "keywordChannel": "channel"
           }
+        },
+        "streamOverlay": {
+          "statusListening": "Running on port {{port}}.",
+          "statusStarting": "Starting…",
+          "title": "OBS overlays",
+          "copied": "Link copied.",
+          "copyFailed": "Could not copy the link.",
+          "chatLabel": "Chat",
+          "chatHint": "Twitch chat from the Twitch chat setting. Suggested size 400×600.",
+          "agentsLabel": "Agent status",
+          "agentsHint": "Which agents are working or need input. Never shows prompts or file paths.",
+          "description": "Browser-source overlays for OBS: Twitch chat and live agent status.",
+          "copy": "Serves transparent overlay pages from this computer. In OBS, add a Browser source and paste a link below.",
+          "toggleLabel": "Toggle OBS overlays",
+          "copyLink": "Copy link",
+          "params": "Optional: add &max=8 to limit how many rows show, or &fade=30 to fade chat messages after 30 seconds.",
+          "portLabel": "Port",
+          "portDescription": "Change this if another app already uses the port. Update your OBS sources after changing it.",
+          "resetHint": "If a link leaks, make a new one. Existing OBS sources stop working until you paste the new link.",
+          "resetLink": "New links",
+          "search": {
+            "title": "OBS overlays",
+            "description": "Browser-source overlays for OBS: Twitch chat and live agent status.",
+            "keywordObs": "obs",
+            "keywordOverlay": "overlay",
+            "keywordStream": "stream",
+            "keywordBrowserSource": "browser source"
+          }
         }
       },
       "right": {

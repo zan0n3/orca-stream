@@ -50,6 +50,7 @@ import { registerTelemetryHandlers } from '../telemetry'
 import { registerShellHandlers } from '../shell'
 import { registerPetHandlers } from '../pet'
 import { registerTwitchChatHandlers } from '../twitch-chat'
+import { registerStreamOverlayHandlers } from '../stream-overlay'
 import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerEmulatorFrameStreamHandlers } from '../emulator-frame-stream'
@@ -209,6 +210,7 @@ export function registerCoreHandlers(
   registerShellHandlers(store)
   registerPetHandlers()
   registerTwitchChatHandlers(store)
+  registerStreamOverlayHandlers(store)
   registerSessionHandlers(store, runtime)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
   registerEmulatorFrameStreamHandlers()

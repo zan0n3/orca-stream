@@ -12,6 +12,21 @@ const BROADCAST_THROTTLE_MS = 100
 let client: TwitchChatClient | null = null
 let unsubscribeSettings: (() => void) | null = null
 let broadcastTimer: ReturnType<typeof setTimeout> | null = null
+const snapshotListeners = new Set<(snapshot: TwitchChatSnapshot) => void>()
+
+export function getTwitchChatSnapshot(): TwitchChatSnapshot | null {
+  return client?.getSnapshot() ?? null
+}
+
+/** Throttled like the renderer broadcast; used by the stream overlay server. */
+export function subscribeTwitchChatSnapshots(
+  listener: (snapshot: TwitchChatSnapshot) => void
+): () => void {
+  snapshotListeners.add(listener)
+  return () => {
+    snapshotListeners.delete(listener)
+  }
+}
 
 export function getTwitchChatChannelFromSettings(
   settings: Pick<GlobalSettings, 'experimentalTwitchChat' | 'twitchChatChannel'>
@@ -61,7 +76,11 @@ function scheduleBroadcast(): void {
   broadcastTimer = setTimeout(() => {
     broadcastTimer = null
     if (client) {
-      broadcastSnapshot(client.getSnapshot())
+      const snapshot = client.getSnapshot()
+      broadcastSnapshot(snapshot)
+      for (const listener of snapshotListeners) {
+        listener(snapshot)
+      }
     }
   }, BROADCAST_THROTTLE_MS)
   broadcastTimer.unref?.()

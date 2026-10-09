@@ -19,6 +19,7 @@ import type {
 } from './api/agent-usage-api'
 import type { AiVaultApi } from './api/ai-vault-api'
 import type { TwitchChatApi } from './api/twitch-chat-api'
+import type { StreamOverlayApi } from './api/stream-overlay-api'
 import type { AppApi, E2EApi, PlatformApi } from './api/app-api'
 import type { AutomationsApi } from './api/automation-api'
 import type { BrowserApi } from './api/browser-api'
@@ -103,6 +104,7 @@ export type PreloadApi = {
   settings: SettingsApi
   agentAwake: AgentAwakeApi
   twitchChat: TwitchChatApi
+  streamOverlay: StreamOverlayApi
   localhostWorktreeLabels: LocalhostWorktreeLabelsApi
   keybindings: KeybindingsApi
   codexAccounts: CodexAccountsApi
