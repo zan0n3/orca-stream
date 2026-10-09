@@ -15,7 +15,9 @@ import {
 import { agentHookServer } from '../agent-hooks/server'
 import { projectStreamOverlayAgents } from '../stream-overlay/stream-overlay-agents'
 import { setStreamPrivacy } from './stream-privacy'
+import { setStreamMode } from './stream-mode'
 import {
+  STREAM_MODE_PATH,
   STREAM_PRIVACY_PATH,
   StreamOverlayServer,
   type StreamOverlayChatPayload
@@ -62,23 +64,29 @@ function getAgentsPayload(): { agents: ReturnType<typeof projectStreamOverlayAge
   return { agents: projectStreamOverlayAgents(agentHookServer.getStatusSnapshot(), Date.now()) }
 }
 
-// Why a file: a compositor hotkey (e.g. Hyprland bind + curl) can blur the stream without the token in its config.
-function privacyUrlFile(): string {
-  return path.join(app.getPath('userData'), 'stream-privacy-url')
+// Why files: a hotkey or the stream launcher script can call these without the token in its own config.
+function controlUrlFiles(): { privacy: string; live: string } {
+  const userData = app.getPath('userData')
+  return {
+    privacy: path.join(userData, 'stream-privacy-url'),
+    live: path.join(userData, 'stream-live-url')
+  }
 }
 
 function writePrivacyUrlFile(status: StreamOverlayStatus, token: string | undefined): void {
+  const files = controlUrlFiles()
   try {
     if (status.state === 'listening' && token) {
-      writeSecureFile(
-        privacyUrlFile(),
-        `http://127.0.0.1:${status.port}${STREAM_PRIVACY_PATH}?token=${encodeURIComponent(token)}&action=toggle\n`
-      )
+      const base = `http://127.0.0.1:${status.port}`
+      const query = `token=${encodeURIComponent(token)}`
+      writeSecureFile(files.privacy, `${base}${STREAM_PRIVACY_PATH}?${query}&action=toggle\n`)
+      writeSecureFile(files.live, `${base}${STREAM_MODE_PATH}?${query}&action=start\n`)
     } else {
-      rmSync(privacyUrlFile(), { force: true })
+      rmSync(files.privacy, { force: true })
+      rmSync(files.live, { force: true })
     }
   } catch (error) {
-    console.warn('[stream-overlay] could not write the stream privacy URL file', error)
+    console.warn('[stream-overlay] could not write the stream control URL files', error)
   }
 }
 
@@ -115,6 +123,7 @@ export function registerStreamOverlayHandlers(store: Store): void {
     getAgents: getAgentsPayload,
     getStats: () => ({ stats: getTwitchStreamStats() }),
     onPrivacy: setStreamPrivacy,
+    onStreamMode: setStreamMode,
     onStatusChange: (status) => {
       broadcastStatus(status)
       writePrivacyUrlFile(status, store.getSettings().streamOverlayToken)

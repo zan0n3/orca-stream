@@ -56,6 +56,14 @@ function broadcast(state: StreamModeState): void {
   }
 }
 
+/** Used by the overlay server's control endpoint (the stream launcher script). */
+export function setStreamMode(action: 'start' | 'stop'): Promise<StreamModeState> {
+  if (!service) {
+    return Promise.reject(new Error('Stream mode is not ready.'))
+  }
+  return action === 'start' ? service.start() : service.stop()
+}
+
 export function registerStreamModeHandlers(store: Store): void {
   disposeStreamMode()
   const hooksDirectory = getStreamHooksDirectory()

@@ -42,6 +42,32 @@ function get(
   })
 }
 
+function post(
+  port: number,
+  path: string,
+  headers: Record<string, string> = {}
+): Promise<{ status: number; body: string }> {
+  return new Promise((resolve, reject) => {
+    const req = request(
+      {
+        host: '127.0.0.1',
+        port,
+        path,
+        method: 'POST',
+        headers: { host: `127.0.0.1:${port}`, ...headers }
+      },
+      (res) => {
+        let body = ''
+        res.setEncoding('utf8')
+        res.on('data', (chunk: string) => (body += chunk))
+        res.on('end', () => resolve({ status: res.statusCode ?? 0, body }))
+      }
+    )
+    req.on('error', reject)
+    req.end()
+  })
+}
+
 describe('StreamOverlayServer', () => {
   let server: StreamOverlayServer | null = null
 
@@ -96,6 +122,39 @@ describe('StreamOverlayServer', () => {
     expect(dashboard.body).toContain('id="composer"')
     expect(dashboard.body).not.toContain('data-page="chat"')
     expect((await get(port, '/overlay/dashboard.js')).status).toBe(200)
+  })
+
+  it('runs control actions only for token-bearing requests without an Origin', async () => {
+    const port = await freePort()
+    const actions: string[] = []
+    server = new StreamOverlayServer({
+      getChat: () => ({ channel: null, status: 'disabled', messages: [] }),
+      getAgents: () => ({ agents: [] }),
+      getStats: () => ({ stats: null }),
+      onStreamMode: async (action) => {
+        actions.push(action)
+        return { active: action === 'start', startedAt: null, hookError: null }
+      }
+    })
+    server.setToken(TOKEN)
+    await server.start(port)
+
+    const ok = await post(port, `/overlay/stream-mode?token=${TOKEN}&action=start`)
+    expect(ok.status).toBe(200)
+    expect(JSON.parse(ok.body)).toMatchObject({ active: true })
+    expect(
+      (
+        await post(port, `/overlay/stream-mode?token=${TOKEN}&action=start`, {
+          origin: 'https://evil.example'
+        })
+      ).status
+    ).toBe(404)
+    expect((await post(port, '/overlay/stream-mode?token=wrong&action=start')).status).toBe(404)
+    expect((await post(port, `/overlay/stream-mode?token=${TOKEN}&action=explode`)).status).toBe(
+      404
+    )
+    expect((await post(port, `/overlay/privacy?token=${TOKEN}&action=toggle`)).status).toBe(404)
+    expect(actions).toEqual(['start'])
   })
 
   it('rejects requests whose Host is not loopback', async () => {

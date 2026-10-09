@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { timingSafeEqual } from 'node:crypto'
 import {
   STREAM_OVERLAY_PAGES,
+  type StreamModeState,
   type StreamOverlayAgent,
   type StreamOverlayChatMessage,
   type StreamOverlayStatus
@@ -10,6 +11,7 @@ import type { TwitchStreamStats } from '../../shared/twitch-chat-types'
 import type { StreamPrivacyState } from '../../shared/stream-privacy'
 
 export const STREAM_PRIVACY_PATH = '/overlay/privacy'
+export const STREAM_MODE_PATH = '/overlay/stream-mode'
 import { STREAM_OVERLAY_SCRIPT, renderStreamOverlayPage } from './stream-overlay-pages'
 import {
   STREAM_CHAT_DASHBOARD_SCRIPT,
@@ -42,6 +44,7 @@ type StreamOverlayServerOptions = {
   getAgents: () => StreamOverlayAgentsPayload
   getStats: () => StreamOverlayStatsPayload
   onPrivacy?: (action: 'on' | 'off' | 'toggle') => Promise<StreamPrivacyState>
+  onStreamMode?: (action: 'start' | 'stop') => Promise<StreamModeState>
   onStatusChange?: (status: StreamOverlayStatus) => void
 }
 
@@ -135,7 +138,29 @@ export class StreamOverlayServer {
     }
     const url = new URL(request.url ?? '/', `http://${host}`)
     if (request.method === 'POST' && url.pathname === STREAM_PRIVACY_PATH) {
-      this.handlePrivacy(request, response, url)
+      const onPrivacy = this.options.onPrivacy
+      const action = url.searchParams.get('action')
+      this.handleControl(
+        request,
+        response,
+        url,
+        onPrivacy && (action === 'on' || action === 'off' || action === 'toggle')
+          ? () => onPrivacy(action)
+          : null
+      )
+      return
+    }
+    if (request.method === 'POST' && url.pathname === STREAM_MODE_PATH) {
+      const onStreamMode = this.options.onStreamMode
+      const action = url.searchParams.get('action')
+      this.handleControl(
+        request,
+        response,
+        url,
+        onStreamMode && (action === 'start' || action === 'stop')
+          ? () => onStreamMode(action)
+          : null
+      )
       return
     }
     if (request.method !== 'GET') {
@@ -171,22 +196,24 @@ export class StreamOverlayServer {
     this.reply(response, 404, 'text/plain', 'Not found')
   }
 
-  // Why POST without Origin only: a hotkey script (curl) may flip the blur; no web page can, even same-host.
-  private handlePrivacy(request: IncomingMessage, response: ServerResponse, url: URL): void {
-    const action = url.searchParams.get('action')
-    const onPrivacy = this.options.onPrivacy
+  // Why POST without Origin only: local scripts (hotkeys, the stream launcher) may call these; no web page can.
+  private handleControl(
+    request: IncomingMessage,
+    response: ServerResponse,
+    url: URL,
+    run: (() => Promise<unknown>) | null
+  ): void {
     if (
       request.headers.origin !== undefined ||
-      !onPrivacy ||
-      !this.isAuthorized(url.searchParams.get('token')) ||
-      (action !== 'on' && action !== 'off' && action !== 'toggle')
+      !run ||
+      !this.isAuthorized(url.searchParams.get('token'))
     ) {
       this.reply(response, 404, 'text/plain', 'Not found')
       return
     }
-    void onPrivacy(action).then(
+    void run().then(
       (state) => this.reply(response, 200, 'application/json', JSON.stringify(state)),
-      () => this.reply(response, 500, 'text/plain', 'Could not change the stream blur')
+      () => this.reply(response, 500, 'text/plain', 'Request failed')
     )
   }
 
