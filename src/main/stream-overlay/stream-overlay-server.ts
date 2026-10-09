@@ -7,6 +7,9 @@ import {
   type StreamOverlayStatus
 } from '../../shared/stream-overlay'
 import type { TwitchStreamStats } from '../../shared/twitch-chat-types'
+import type { StreamPrivacyState } from '../../shared/stream-privacy'
+
+export const STREAM_PRIVACY_PATH = '/overlay/privacy'
 import { STREAM_OVERLAY_SCRIPT, renderStreamOverlayPage } from './stream-overlay-pages'
 import {
   STREAM_CHAT_DASHBOARD_SCRIPT,
@@ -38,6 +41,7 @@ type StreamOverlayServerOptions = {
   getChat: () => StreamOverlayChatPayload
   getAgents: () => StreamOverlayAgentsPayload
   getStats: () => StreamOverlayStatsPayload
+  onPrivacy?: (action: 'on' | 'off' | 'toggle') => Promise<StreamPrivacyState>
   onStatusChange?: (status: StreamOverlayStatus) => void
 }
 
@@ -129,11 +133,15 @@ export class StreamOverlayServer {
       this.reply(response, 421, 'text/plain', 'Misdirected request')
       return
     }
+    const url = new URL(request.url ?? '/', `http://${host}`)
+    if (request.method === 'POST' && url.pathname === STREAM_PRIVACY_PATH) {
+      this.handlePrivacy(request, response, url)
+      return
+    }
     if (request.method !== 'GET') {
       this.reply(response, 405, 'text/plain', 'Method not allowed')
       return
     }
-    const url = new URL(request.url ?? '/', `http://${host}`)
     if (url.pathname === '/overlay/overlay.js') {
       this.reply(response, 200, 'text/javascript; charset=utf-8', STREAM_OVERLAY_SCRIPT)
       return
@@ -161,6 +169,25 @@ export class StreamOverlayServer {
       return
     }
     this.reply(response, 404, 'text/plain', 'Not found')
+  }
+
+  // Why POST without Origin only: a hotkey script (curl) may flip the blur; no web page can, even same-host.
+  private handlePrivacy(request: IncomingMessage, response: ServerResponse, url: URL): void {
+    const action = url.searchParams.get('action')
+    const onPrivacy = this.options.onPrivacy
+    if (
+      request.headers.origin !== undefined ||
+      !onPrivacy ||
+      !this.isAuthorized(url.searchParams.get('token')) ||
+      (action !== 'on' && action !== 'off' && action !== 'toggle')
+    ) {
+      this.reply(response, 404, 'text/plain', 'Not found')
+      return
+    }
+    void onPrivacy(action).then(
+      (state) => this.reply(response, 200, 'application/json', JSON.stringify(state)),
+      () => this.reply(response, 500, 'text/plain', 'Could not change the stream blur')
+    )
   }
 
   private isAuthorized(candidate: string | null): boolean {

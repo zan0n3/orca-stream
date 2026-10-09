@@ -1,5 +1,8 @@
 import { randomBytes } from 'node:crypto'
-import { BrowserWindow, ipcMain } from 'electron'
+import { rmSync } from 'node:fs'
+import path from 'node:path'
+import { app, BrowserWindow, ipcMain } from 'electron'
+import { writeSecureFile } from '../../shared/secure-file'
 import type { Store } from '../persistence'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import type { TwitchChatSnapshot } from '../../shared/twitch-chat-types'
@@ -11,7 +14,9 @@ import {
 } from '../../shared/stream-overlay'
 import { agentHookServer } from '../agent-hooks/server'
 import { projectStreamOverlayAgents } from '../stream-overlay/stream-overlay-agents'
+import { setStreamPrivacy } from './stream-privacy'
 import {
+  STREAM_PRIVACY_PATH,
   StreamOverlayServer,
   type StreamOverlayChatPayload
 } from '../stream-overlay/stream-overlay-server'
@@ -57,6 +62,26 @@ function getAgentsPayload(): { agents: ReturnType<typeof projectStreamOverlayAge
   return { agents: projectStreamOverlayAgents(agentHookServer.getStatusSnapshot(), Date.now()) }
 }
 
+// Why a file: a compositor hotkey (e.g. Hyprland bind + curl) can blur the stream without the token in its config.
+function privacyUrlFile(): string {
+  return path.join(app.getPath('userData'), 'stream-privacy-url')
+}
+
+function writePrivacyUrlFile(status: StreamOverlayStatus, token: string | undefined): void {
+  try {
+    if (status.state === 'listening' && token) {
+      writeSecureFile(
+        privacyUrlFile(),
+        `http://127.0.0.1:${status.port}${STREAM_PRIVACY_PATH}?token=${encodeURIComponent(token)}&action=toggle\n`
+      )
+    } else {
+      rmSync(privacyUrlFile(), { force: true })
+    }
+  } catch (error) {
+    console.warn('[stream-overlay] could not write the stream privacy URL file', error)
+  }
+}
+
 function broadcastStatus(status: StreamOverlayStatus): void {
   for (const window of BrowserWindow.getAllWindows()) {
     if (!window.isDestroyed() && !window.webContents.isDestroyed()) {
@@ -79,6 +104,7 @@ function applySettings(store: Store, overlay: StreamOverlayServer, settings: Glo
     return
   }
   overlay.setToken(settings.streamOverlayToken)
+  writePrivacyUrlFile(overlay.getStatus(), settings.streamOverlayToken)
   void overlay.start(normalizeStreamOverlayPort(settings.streamOverlayPort))
 }
 
@@ -88,7 +114,11 @@ export function registerStreamOverlayHandlers(store: Store): void {
     getChat: () => toChatPayload(getTwitchChatSnapshot()),
     getAgents: getAgentsPayload,
     getStats: () => ({ stats: getTwitchStreamStats() }),
-    onStatusChange: broadcastStatus
+    onPrivacy: setStreamPrivacy,
+    onStatusChange: (status) => {
+      broadcastStatus(status)
+      writePrivacyUrlFile(status, store.getSettings().streamOverlayToken)
+    }
   })
 
   let agentTimer: ReturnType<typeof setTimeout> | null = null

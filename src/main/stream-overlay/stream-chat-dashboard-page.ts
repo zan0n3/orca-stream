@@ -18,6 +18,13 @@ header { display: flex; align-items: center; gap: 16px; padding: 12px 18px; back
 #channel { font-weight: 700; font-size: 20px; }
 #uptime, #connection, #category { color: var(--muted); font-size: 14px; }
 #title { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#privacy { flex: none; font: 700 15px/1 system-ui, sans-serif; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+#privacy:disabled { opacity: 0.6; cursor: default; }
+#privacy[hidden] { display: none; }
+body.blurred header { background: #3b0d0d; border-bottom-color: var(--live); }
+body.blurred #privacy { background: var(--live); border-color: var(--live); color: #fff; }
+#privacy-error { color: var(--error); font-size: 13px; max-width: 280px; }
+#privacy-error:empty { display: none; }
 #layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 320px; }
 #chat-col { position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 #messages { flex: 1; min-height: 0; overflow-y: auto; padding: 10px 18px; }
@@ -216,6 +223,24 @@ const SCRIPT = `
     bridge.getAuthState().then(applyAuth, () => {})
   }
 
+  const privacyButton = $('privacy')
+  if (bridge && bridge.setPrivacy) {
+    let privacy = { enabled: false, busy: false, error: null }
+    const applyPrivacy = (next) => {
+      if (!next) return
+      privacy = next
+      document.body.classList.toggle('blurred', privacy.enabled)
+      privacyButton.textContent = privacy.busy ? 'Working…' : privacy.enabled ? 'STREAM BLURRED · Unblur' : 'Blur stream'
+      privacyButton.disabled = privacy.busy
+      privacyButton.setAttribute('aria-pressed', String(privacy.enabled))
+      $('privacy-error').textContent = privacy.error || ''
+    }
+    privacyButton.hidden = false
+    privacyButton.addEventListener('click', () => { bridge.setPrivacy(!privacy.enabled).then(applyPrivacy, () => {}) })
+    bridge.onPrivacyChanged(applyPrivacy)
+    bridge.getPrivacy().then(applyPrivacy, () => {})
+  }
+
   const source = new EventSource('/overlay/events' + location.search)
   source.addEventListener('chat', (event) => renderChat(JSON.parse(event.data)))
   source.addEventListener('stats', (event) => { stats = JSON.parse(event.data).stats; renderStats() })
@@ -241,6 +266,8 @@ export function renderStreamChatDashboardPage(): string {
     <div class="heading-top"><span id="channel"></span><span id="uptime"></span><span id="category"></span><span id="connection"></span></div>
     <div id="title"></div>
   </div>
+  <div id="privacy-error" role="alert"></div>
+  <button id="privacy" type="button" hidden>Blur stream</button>
 </header>
 <div id="layout">
   <section id="chat-col">

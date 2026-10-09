@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron'
 import type { StreamModeState, StreamOverlayStatus } from '../../shared/stream-overlay'
+import type { StreamPrivacyState } from '../../shared/stream-privacy'
 import type { PreloadApi } from '../api-types'
 
 export const streamOverlayApi = {
@@ -24,3 +25,15 @@ export const streamModeApi = {
     return () => ipcRenderer.removeListener('streamMode:changed', listener)
   }
 } satisfies PreloadApi['streamMode']
+
+export const streamPrivacyApi = {
+  getState: (): Promise<StreamPrivacyState> => ipcRenderer.invoke('streamPrivacy:getState'),
+  set: (enabled: boolean): Promise<StreamPrivacyState> =>
+    ipcRenderer.invoke('streamPrivacy:set', enabled),
+  onChanged: (callback: (state: StreamPrivacyState) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, state: StreamPrivacyState): void =>
+      callback(state)
+    ipcRenderer.on('streamPrivacy:changed', listener)
+    return () => ipcRenderer.removeListener('streamPrivacy:changed', listener)
+  }
+} satisfies PreloadApi['streamPrivacy']

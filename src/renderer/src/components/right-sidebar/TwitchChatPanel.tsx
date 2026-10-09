@@ -10,6 +10,7 @@ import type {
 } from '../../../../shared/twitch-chat-types'
 import { useTwitchChatSnapshot } from './use-twitch-chat-snapshot'
 import { StreamModeButton, StreamModeHookError } from './StreamModeButton'
+import { StreamPrivacyButton } from './StreamPrivacyButton'
 import { TwitchChatComposer } from './TwitchChatComposer'
 import { useTwitchChatAuth } from './use-twitch-chat-auth'
 
@@ -136,6 +137,7 @@ export default function TwitchChatPanel(): React.JSX.Element {
             ) : null}
             {statusLabel(status)}
           </span>
+          <StreamPrivacyButton />
           <StreamModeButton />
         </span>
       </div>

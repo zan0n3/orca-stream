@@ -14280,6 +14280,11 @@
             "placeholder": "Chat as {{login}}",
             "inputLabel": "Chat message",
             "send": "Send"
+          },
+          "streamPrivacy": {
+            "on": "Unblur",
+            "off": "Blur",
+            "hint": "Blurs your screen capture in OBS so viewers can’t read it. Your own screen stays sharp."
           }
         }
       },

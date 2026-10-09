@@ -283,6 +283,10 @@ vi.mock('../stream-mode', () => ({
   registerStreamModeHandlers: vi.fn()
 }))
 
+vi.mock('../stream-privacy', () => ({
+  registerStreamPrivacyHandlers: vi.fn()
+}))
+
 vi.mock('../session', () => ({
   registerSessionHandlers: registerSessionHandlersMock
 }))

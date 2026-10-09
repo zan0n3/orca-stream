@@ -14,6 +14,12 @@ if (location.hostname === '127.0.0.1' && location.pathname === '/overlay/chat') 
     getAuthState: (): Promise<unknown> => ipcRenderer.invoke('twitchChat:getAuthState'),
     onAuthChanged: (callback: (state: unknown) => void): void => {
       ipcRenderer.on('twitchChat:authChanged', (_event, state: unknown) => callback(state))
+    },
+    getPrivacy: (): Promise<unknown> => ipcRenderer.invoke('streamPrivacy:getState'),
+    setPrivacy: (enabled: unknown): Promise<unknown> =>
+      ipcRenderer.invoke('streamPrivacy:set', enabled === true),
+    onPrivacyChanged: (callback: (state: unknown) => void): void => {
+      ipcRenderer.on('streamPrivacy:changed', (_event, state: unknown) => callback(state))
     }
   })
 }
