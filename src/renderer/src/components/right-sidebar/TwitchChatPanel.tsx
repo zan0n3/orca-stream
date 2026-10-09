@@ -9,6 +9,7 @@ import type {
   TwitchChatMessage
 } from '../../../../shared/twitch-chat-types'
 import { useTwitchChatSnapshot } from './use-twitch-chat-snapshot'
+import { StreamModeButton, StreamModeHookError } from './StreamModeButton'
 
 // Why: within this many px of the bottom still counts as "following" so sub-pixel scroll drift doesn't unstick.
 const STICK_TO_BOTTOM_THRESHOLD_PX = 24
@@ -125,13 +126,17 @@ export default function TwitchChatPanel(): React.JSX.Element {
         <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           #{configuredChannel}
         </span>
-        <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-          {status === 'connecting' || status === 'reconnecting' ? (
-            <Loader2 className="size-3 animate-spin" />
-          ) : null}
-          {statusLabel(status)}
+        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            {status === 'connecting' || status === 'reconnecting' ? (
+              <Loader2 className="size-3 animate-spin" />
+            ) : null}
+            {statusLabel(status)}
+          </span>
+          <StreamModeButton />
         </span>
       </div>
+      <StreamModeHookError />
       <div className="relative min-h-0 flex-1">
         <div
           ref={scrollRef}

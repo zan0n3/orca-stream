@@ -34,6 +34,7 @@ import { isDevParentShutdownRequested } from './configure-process'
 import { getCanonicalUserDataPath } from '../persistence'
 import { disposeTwitchChat } from '../ipc/twitch-chat'
 import { disposeStreamOverlay } from '../ipc/stream-overlay'
+import { disposeStreamMode } from '../ipc/stream-mode'
 
 // Why: will-quit fires twice — first pass preventDefaults and runs teardown; second pass exits.
 let daemonDisconnectDone = false
@@ -115,6 +116,7 @@ function installWillQuitHandler(): void {
     }
     // A renderer can veto before-quit; push must survive until quit is committed.
     state.desktopPushService?.stop()
+    disposeStreamMode()
     disposeStreamOverlay()
     disposeTwitchChat()
     state.unsubscribeSystemResumeBroadcast?.()

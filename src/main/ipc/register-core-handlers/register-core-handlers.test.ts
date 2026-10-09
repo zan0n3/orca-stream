@@ -271,6 +271,18 @@ vi.mock('../pet', () => ({
   registerPetHandlers: registerPetHandlersMock
 }))
 
+vi.mock('../twitch-chat', () => ({
+  registerTwitchChatHandlers: vi.fn()
+}))
+
+vi.mock('../stream-overlay', () => ({
+  registerStreamOverlayHandlers: vi.fn()
+}))
+
+vi.mock('../stream-mode', () => ({
+  registerStreamModeHandlers: vi.fn()
+}))
+
 vi.mock('../session', () => ({
   registerSessionHandlers: registerSessionHandlersMock
 }))

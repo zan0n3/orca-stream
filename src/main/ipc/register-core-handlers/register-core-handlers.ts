@@ -51,6 +51,7 @@ import { registerShellHandlers } from '../shell'
 import { registerPetHandlers } from '../pet'
 import { registerTwitchChatHandlers } from '../twitch-chat'
 import { registerStreamOverlayHandlers } from '../stream-overlay'
+import { registerStreamModeHandlers } from '../stream-mode'
 import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerEmulatorFrameStreamHandlers } from '../emulator-frame-stream'
@@ -211,6 +212,7 @@ export function registerCoreHandlers(
   registerPetHandlers()
   registerTwitchChatHandlers(store)
   registerStreamOverlayHandlers(store)
+  registerStreamModeHandlers(store)
   registerSessionHandlers(store, runtime)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
   registerEmulatorFrameStreamHandlers()

@@ -12721,7 +12721,10 @@
             "keywordOverlay": "overlay",
             "keywordStream": "stream",
             "keywordBrowserSource": "browser source"
-          }
+          },
+          "streamModeLabel": "Stream mode",
+          "streamModeCopy": "Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs the stream-start script in the scripts folder; End stream runs stream-stop. Use the scripts to launch OBS or arrange windows.",
+          "openScripts": "Open scripts folder"
         }
       },
       "right": {
@@ -14252,6 +14255,13 @@
             "logLabel": "Twitch chat messages",
             "waiting": "Waiting for messages…",
             "jumpToLatest": "Jump to latest"
+          },
+          "streamMode": {
+            "end": "End stream",
+            "start": "Go live",
+            "endHint": "Closes the chat window and runs your stream-stop script.",
+            "hint": "Opens the chat window and runs your stream-start script.",
+            "failed": "Could not switch stream mode."
           }
         }
       },

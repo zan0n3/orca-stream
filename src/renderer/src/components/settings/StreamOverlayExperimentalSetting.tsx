@@ -202,6 +202,29 @@ export function StreamOverlayExperimentalSetting({
               {translate('auto.components.settings.streamOverlay.resetLink', 'New links')}
             </Button>
           </div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 shrink space-y-0.5">
+              <Label>
+                {translate('auto.components.settings.streamOverlay.streamModeLabel', 'Stream mode')}
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {translate(
+                  'auto.components.settings.streamOverlay.streamModeCopy',
+                  'Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs the stream-start script in the scripts folder; End stream runs stream-stop. Use the scripts to launch OBS or arrange windows.'
+                )}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="xs"
+              onClick={() => void window.api.streamMode.openHooksFolder()}
+            >
+              {translate(
+                'auto.components.settings.streamOverlay.openScripts',
+                'Open scripts folder'
+              )}
+            </Button>
+          </div>
         </div>
       ) : null}
     </SearchableSetting>

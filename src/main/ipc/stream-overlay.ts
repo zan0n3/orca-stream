@@ -3,7 +3,12 @@ import { BrowserWindow, ipcMain } from 'electron'
 import type { Store } from '../persistence'
 import type { GlobalSettings } from '../../shared/global-settings-types'
 import type { TwitchChatSnapshot } from '../../shared/twitch-chat-types'
-import { normalizeStreamOverlayPort, type StreamOverlayStatus } from '../../shared/stream-overlay'
+import {
+  buildStreamOverlayUrl,
+  normalizeStreamOverlayPort,
+  type StreamOverlayPage,
+  type StreamOverlayStatus
+} from '../../shared/stream-overlay'
 import { agentHookServer } from '../agent-hooks/server'
 import { projectStreamOverlayAgents } from '../stream-overlay/stream-overlay-agents'
 import {
@@ -18,6 +23,12 @@ const AGENT_PUBLISH_THROTTLE_MS = 250
 const AGENT_REFRESH_MS = 30_000
 
 let teardown: (() => void) | null = null
+let readyUrls: ((page: StreamOverlayPage, query?: string) => string | null) | null = null
+
+/** Overlay URL with the live token, or null until the server is listening. */
+export function getStreamOverlayUrl(page: StreamOverlayPage, query = ''): string | null {
+  return readyUrls?.(page, query) ?? null
+}
 
 export function generateStreamOverlayToken(): string {
   return randomBytes(18).toString('base64url')
@@ -105,6 +116,14 @@ export function registerStreamOverlayHandlers(store: Store): void {
   })
   applySettings(store, overlay, store.getSettings())
 
+  readyUrls = (page, query = '') => {
+    const status = overlay.getStatus()
+    const token = store.getSettings().streamOverlayToken
+    return status.state === 'listening' && token
+      ? `${buildStreamOverlayUrl(status.port, token, page)}${query}`
+      : null
+  }
+
   ipcMain.removeHandler('streamOverlay:getStatus')
   ipcMain.handle('streamOverlay:getStatus', (): StreamOverlayStatus => overlay.getStatus())
 
@@ -123,4 +142,5 @@ export function registerStreamOverlayHandlers(store: Store): void {
 export function disposeStreamOverlay(): void {
   teardown?.()
   teardown = null
+  readyUrls = null
 }

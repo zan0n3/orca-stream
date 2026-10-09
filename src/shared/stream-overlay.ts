@@ -43,3 +43,12 @@ export function buildStreamOverlayUrl(
 export function buildMaskedStreamOverlayUrl(port: number, page: StreamOverlayPage): string {
   return `127.0.0.1:${port}/overlay/${page}?token=••••••`
 }
+
+export const STREAM_CHAT_WINDOW_TITLE = 'Orca Stream Chat'
+
+export type StreamModeState = {
+  active: boolean
+  startedAt: number | null
+  /** Last start/stop script failure, shown in the UI; null when the script ran or none exists. */
+  hookError: string | null
+}

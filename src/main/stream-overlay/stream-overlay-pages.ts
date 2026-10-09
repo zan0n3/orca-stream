@@ -23,6 +23,9 @@ body {
 .meta { opacity: 0.75; font-weight: 500; }
 .offline { opacity: 0.6; font-weight: 500; }
 @keyframes pulse { 50% { opacity: 0.35; } }
+body.reader { background: #111113; font-size: 17px; font-weight: 500; text-shadow: none; }
+body.reader #root { gap: 2px; overflow-y: auto; justify-content: flex-start; }
+body.reader .item { background: transparent; padding: 3px 6px; }
 `
 
 const SCRIPT = `
@@ -30,7 +33,10 @@ const SCRIPT = `
   const params = new URLSearchParams(location.search)
   const page = document.body.dataset.page
   const root = document.getElementById('root')
-  const maxItems = Math.max(1, Math.min(50, Number(params.get('max')) || 12))
+  // Why: reader mode is the streamer's own chat window, not a stream graphic.
+  const reader = params.get('reader') === '1'
+  if (reader) document.body.classList.add('reader')
+  const maxItems = Math.max(1, Math.min(50, Number(params.get('max')) || (reader ? 50 : 12)))
   const fadeSeconds = Math.max(0, Number(params.get('fade')) || 0)
   const shown = new Map()
   let agents = []
@@ -55,6 +61,7 @@ const SCRIPT = `
       shown.set(message.id, row)
       if (fadeSeconds > 0) setTimeout(() => row.classList.add('faded'), fadeSeconds * 1000)
     }
+    if (reader) root.scrollTop = root.scrollHeight
   }
 
   const label = { working: 'Working', blocked: 'Needs input', waiting: 'Needs input', done: 'Done' }

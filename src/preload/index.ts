@@ -32,7 +32,7 @@ import { diagnosticsApi } from './api/diagnostics-bridge'
 import { settingsApi } from './api/settings-bridge'
 import { agentAwakeApi } from './api/agent-awake-bridge'
 import { twitchChatApi } from './api/twitch-chat-bridge'
-import { streamOverlayApi } from './api/stream-overlay-bridge'
+import { streamModeApi, streamOverlayApi } from './api/stream-overlay-bridge'
 import { localhostWorktreeLabelsApi } from './api/localhost-worktree-labels-bridge'
 import { keybindingsApi } from './api/keybindings-bridge'
 import { codexAccountsApi } from './api/codex-accounts-bridge'
@@ -135,6 +135,7 @@ const api = {
   agentAwake: agentAwakeApi,
   twitchChat: twitchChatApi,
   streamOverlay: streamOverlayApi,
+  streamMode: streamModeApi,
   localhostWorktreeLabels: localhostWorktreeLabelsApi,
   keybindings: keybindingsApi,
   codexAccounts: codexAccountsApi,
