@@ -12676,6 +12676,24 @@
           "offCount": "{{count}} off",
           "machines": "Machines",
           "machinesDescription": "Choose which machines can show notifications on this computer. A paired server’s switch also covers work reached through it."
+        },
+        "twitchChat": {
+          "title": "Twitch chat",
+          "description": "Show a Twitch channel’s live chat in the right sidebar.",
+          "copy": "Adds a Twitch Chat tab to the right sidebar. Chat is read anonymously, so no Twitch login is needed.",
+          "toggleLabel": "Toggle Twitch chat",
+          "channelLabel": "Channel",
+          "channelPlaceholder": "Channel name or twitch.tv link",
+          "channelInvalid": "Use a channel name like “mychannel” or a twitch.tv link.",
+          "channelHint": "Usually your own channel. Changes apply right away.",
+          "search": {
+            "title": "Twitch chat",
+            "description": "Show a Twitch channel’s live chat in the right sidebar.",
+            "keywordTwitch": "twitch",
+            "keywordChat": "chat",
+            "keywordStream": "stream",
+            "keywordChannel": "channel"
+          }
         }
       },
       "right": {
@@ -13576,7 +13594,8 @@
             "fc3095d2ed": "explorer",
             "aiVaultSessionHistory": "Agents",
             "folderWorkspaces": "Attached worktrees",
-            "parentPrChecks": "PR Checks"
+            "parentPrChecks": "PR Checks",
+            "twitchChat": "Twitch Chat"
           },
           "right": {
             "panel": {
@@ -14193,6 +14212,18 @@
             "sourceMissing": "Transcript is no longer available",
             "metadataMatch": "Match in session metadata",
             "sourceActionsUnavailable": "The transcript source is unavailable."
+          },
+          "TwitchChatPanel": {
+            "connected": "Connected",
+            "reconnecting": "Reconnecting…",
+            "connecting": "Connecting…",
+            "disconnected": "Disconnected",
+            "noChannel": "No channel set",
+            "noChannelHint": "Choose which Twitch channel’s chat to show.",
+            "setChannel": "Set channel…",
+            "logLabel": "Twitch chat messages",
+            "waiting": "Waiting for messages…",
+            "jumpToLatest": "Jump to latest"
           }
         }
       },

@@ -5,6 +5,7 @@ import { translateSearchKeyword } from './settings-search-keywords'
 import { getNewWorktreeCardStyleSearchEntry } from './new-worktree-card-style-search-entry'
 import { getNativeChatExperimentalSearchEntry } from './native-chat-experimental-search-entry'
 import { getEphemeralVmsSearchEntry } from './ephemeral-vms-search'
+import { getTwitchChatSearchEntry } from './twitch-chat-search-entry'
 
 export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
   (): SettingsSearchEntry[] => [
@@ -180,7 +181,8 @@ export const getExperimentalPaneSearchEntries = createLocalizedCatalog(
       ]
     },
     getNewWorktreeCardStyleSearchEntry(),
-    getEphemeralVmsSearchEntry()
+    getEphemeralVmsSearchEntry(),
+    getTwitchChatSearchEntry()
   ]
 )
 
@@ -224,6 +226,9 @@ export function getExperimentalSearchEntry() {
     ),
     ephemeralVms: findEntry(
       translate('auto.components.settings.ephemeralVms.search.cloudVmTitle', 'Cloud VM')
+    ),
+    twitchChat: findEntry(
+      translate('auto.components.settings.twitchChat.search.title', 'Twitch chat')
     )
   } as const
 }

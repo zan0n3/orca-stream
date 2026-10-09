@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Plug, Files, GitBranch, ListChecks, Workflow } from 'lucide-react'
+import { Plug, Files, GitBranch, ListChecks, MessageSquare, Workflow } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { useRepoById } from '@/store/selectors'
 import { isFolderRepo } from '../../../../shared/repo-kind'
@@ -13,6 +13,7 @@ import {
   type PluginPanelsFetchStatus
 } from '@/store/plugin-panels'
 import { useShortcutLabel } from '@/hooks/useShortcutLabel'
+import { isWebClientLocation } from '@/lib/web-client-location'
 import { translate } from '@/i18n/i18n'
 import { AgentSessionHistoryIcon } from './agent-session-history-icon'
 import type { ActivityBarItem } from './activity-bar-buttons'
@@ -46,6 +47,9 @@ export function useRightSidebarActivityItems({
   const isFolder = isFolderWorkspace || (activeRepo ? isFolderRepo(activeRepo) : false)
   const isSshRepo = Boolean(activeRepo?.connectionId)
   const pluginSystemEnabled = useAppStore((s) => s.settings?.pluginSystemEnabled === true)
+  // Why not on web clients: the chat connection lives in the desktop main process.
+  const twitchChatEnabled =
+    useAppStore((s) => s.settings?.experimentalTwitchChat === true) && !isWebClientLocation()
   const pluginPanels = usePluginPanels()
   const visiblePluginPanels = useMemo(
     () => (pluginSystemEnabled ? pluginPanels : []),
@@ -111,6 +115,16 @@ export function useRightSidebarActivityItems({
         shortcut: portsShortcut === 'Unassigned' ? '' : portsShortcut,
         sshOnly: true
       },
+      ...(twitchChatEnabled
+        ? [
+            {
+              id: 'twitch-chat' as const,
+              icon: MessageSquare,
+              title: translate('auto.components.right.sidebar.index.twitchChat', 'Twitch Chat'),
+              shortcut: ''
+            }
+          ]
+        : []),
       // Why: plugin panels append after the built-in tabs so core navigation
       // keeps stable positions regardless of which plugins are installed.
       ...getPluginPanelActivityItems(visiblePluginPanels, pluginPanelErrors)
@@ -121,7 +135,8 @@ export function useRightSidebarActivityItems({
       pluginPanelErrors,
       visiblePluginPanels,
       portsShortcut,
-      sourceControlShortcut
+      sourceControlShortcut,
+      twitchChatEnabled
     ]
   )
 

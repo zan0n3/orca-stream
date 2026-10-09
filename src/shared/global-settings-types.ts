@@ -474,6 +474,10 @@ export type GlobalSettings = NativeChatGlobalSettings & {
   experimentalSidekick?: boolean
   /** Experimental: left-sidebar Agents view — threaded feed of agent completions, blocking/unread state, worktree creation. */
   experimentalActivity: boolean
+  /** Experimental: right-sidebar Twitch chat tab (read-only, anonymous connection). */
+  experimentalTwitchChat?: boolean
+  /** Channel as typed (name, #name or twitch.tv URL); readers normalize with normalizeTwitchChannel. */
+  twitchChatChannel?: string
   /** Experimental: pop-out Kanban dashboard for monitoring and opening agent terminals across worktrees. */
   experimentalAgentDashboardPopout?: boolean
   /** Set after the one-time legacy Agents tab introduction has been acknowledged. */

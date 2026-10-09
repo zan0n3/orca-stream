@@ -78,6 +78,16 @@ export function updateSettings(
   if ('agentSkillSharingEnabled' in updates) {
     sanitizedUpdates.agentSkillSharingEnabled = updates.agentSkillSharingEnabled === true
   }
+  if ('experimentalTwitchChat' in updates) {
+    sanitizedUpdates.experimentalTwitchChat = updates.experimentalTwitchChat === true
+  }
+  // Why raw text, not the normalized login: normalizing mid-typing would rewrite the field under the user.
+  if ('twitchChatChannel' in updates) {
+    sanitizedUpdates.twitchChatChannel =
+      typeof updates.twitchChatChannel === 'string'
+        ? updates.twitchChatChannel.trim().slice(0, 200)
+        : ''
+  }
   if ('nestedWorkerMaxDepth' in updates) {
     sanitizedUpdates.nestedWorkerMaxDepth = resolveNestedWorkerMaxDepth({
       nestedWorkerMaxDepth: updates.nestedWorkerMaxDepth
