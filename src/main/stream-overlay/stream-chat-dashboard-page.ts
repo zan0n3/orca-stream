@@ -1,4 +1,8 @@
 import { TWITCH_CHAT_MAX_MESSAGE_LENGTH } from '../../shared/twitch-chat-types'
+import { TWITCH_CHAT_ASSISTANT_PREFIX } from '../../shared/twitch-chat-engagement'
+import mainCss from '../../renderer/src/assets/main.css?raw'
+
+const assistantColor = [...mainCss.matchAll(/--callout-note:\s*([^;]+);/g)].at(-1)?.[1]
 
 // Why a separate page: this is the streamer's own chat window (reader=1), not an OBS graphic.
 const STYLES = `
@@ -6,6 +10,7 @@ const STYLES = `
   color-scheme: dark;
   --bg: #0e0e10; --panel: #18181b; --raised: #1f1f23; --line: #2f2f35;
   --text: #efeff1; --muted: #adadb8; --accent: #a970ff; --live: #eb0400; --error: #f87171;
+  --callout-note: ${assistantColor ?? 'var(--accent)'};
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
@@ -31,6 +36,7 @@ body.blurred #privacy { background: var(--live); border-color: var(--live); colo
 .msg { padding: 3px 0; overflow-wrap: anywhere; }
 .msg .name { font-weight: 700; }
 .msg.action .text { font-style: italic; }
+.msg.assistant .text { color: var(--callout-note); }
 .empty { color: var(--muted); text-align: center; padding-top: 24px; font-size: 15px; }
 #jump { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); font: inherit; font-size: 14px; color: var(--text); background: var(--raised); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
 #jump[hidden] { display: none; }
@@ -120,6 +126,7 @@ const SCRIPT = `
     for (const message of data.messages) {
       if (shown.has(message.id)) continue
       const row = el('div', message.isAction ? 'msg action' : 'msg')
+      if (message.name.toLowerCase() === channel?.toLowerCase() && message.text.startsWith(${JSON.stringify(TWITCH_CHAT_ASSISTANT_PREFIX)})) row.classList.add('assistant')
       const name = el('span', 'name', message.name)
       name.style.color = readable(message.color)
       row.append(name, el('span', 'text', message.isAction ? ' ' + message.text : ': ' + message.text))
