@@ -35,6 +35,7 @@ import { getCanonicalUserDataPath } from '../persistence'
 import { disposeTwitchChat } from '../ipc/twitch-chat'
 import { disposeStreamOverlay } from '../ipc/stream-overlay'
 import { disposeStreamMode } from '../ipc/stream-mode'
+import { writeSupervisedCleanExitMarker } from './supervised-clean-exit-marker'
 
 // Why: will-quit fires twice — first pass preventDefaults and runs teardown; second pass exits.
 let daemonDisconnectDone = false
@@ -114,6 +115,7 @@ function installWillQuitHandler(): void {
     if (!quitTeardownStartGate.tryStart(event)) {
       return
     }
+    writeSupervisedCleanExitMarker()
     // A renderer can veto before-quit; push must survive until quit is committed.
     state.desktopPushService?.stop()
     disposeStreamMode()
