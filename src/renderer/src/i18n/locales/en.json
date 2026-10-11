@@ -14288,7 +14288,8 @@
           },
           "OrcaStreamPanel": {
             "chat": "Chat",
-            "suno": "Suno"
+            "suno": "Suno",
+            "audio": "Audio"
           },
           "SunoPanel": {
             "copied": "{{what}} copied",
@@ -14335,6 +14336,29 @@
             "instrumental": "Instrumental",
             "instrumentalNote": "Instrumental: no lyrics, so Suno makes music only.",
             "reset": "Reset"
+          },
+          "StreamAudio": {
+            "mixer": "OBS mixer",
+            "noInputs": "OBS has no audio inputs yet.",
+            "waiting": "Waiting for OBS. Open OBS (or press Go live); this tab connects by itself.",
+            "checks": "Sound checks",
+            "setupTitle": "Setup check",
+            "setupHow": "Mic and music inputs exist, are unmuted, and nothing captures the desktop twice.",
+            "micTitle": "Mic check",
+            "micHow": "Talk like you do on stream for 6 seconds.",
+            "micPrompt": "Talk now…",
+            "musicTitle": "Music check",
+            "musicHow": "Play your StreamBeats music and stay quiet for 6 seconds.",
+            "musicPrompt": "Listening to the music…",
+            "balanceTitle": "Voice + music",
+            "balanceHow": "Keep the music playing and talk for 8 seconds; your voice should sit well above it.",
+            "balancePrompt": "Talk over the music…",
+            "again": "Again",
+            "run": "Run",
+            "apply": "Set to {{db}} dB",
+            "unmute": "Unmute {{name}}",
+            "mute": "Mute {{name}}",
+            "fader": "{{name}} volume"
           }
         }
       },

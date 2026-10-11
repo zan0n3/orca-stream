@@ -1,16 +1,17 @@
 import React, { useState } from 'react'
-import { Loader2, MessageSquare, Music } from 'lucide-react'
+import { Loader2, MessageSquare, Music, Volume2 } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { translate } from '@/i18n/i18n'
 import { normalizeTwitchChannel } from '../../../../shared/twitch-chat-channel'
 import { StreamModeButton, StreamModeHookError } from './StreamModeButton'
 import { StreamPrivacyButton } from './StreamPrivacyButton'
+import StreamAudioPanel from './StreamAudioPanel'
 import SunoPanel from './SunoPanel'
 import TwitchChatPanel, { statusLabel } from './TwitchChatPanel'
 import { useTwitchChatSnapshot } from './use-twitch-chat-snapshot'
 
-type StreamPanelTab = 'chat' | 'suno'
+type StreamPanelTab = 'chat' | 'suno' | 'audio'
 
 // Why module-level: the sidebar unmounts panels on tab switch; coming back should land on the same tab.
 let lastStreamPanelTab: StreamPanelTab = 'chat'
@@ -44,7 +45,7 @@ function StreamControlsBar(): React.JSX.Element {
 export default function OrcaStreamPanel(): React.JSX.Element {
   const [tab, setTab] = useState<StreamPanelTab>(lastStreamPanelTab)
   const selectTab = (value: string): void => {
-    const next: StreamPanelTab = value === 'suno' ? 'suno' : 'chat'
+    const next: StreamPanelTab = value === 'suno' || value === 'audio' ? value : 'chat'
     lastStreamPanelTab = next
     setTab(next)
   }
@@ -61,12 +62,24 @@ export default function OrcaStreamPanel(): React.JSX.Element {
               <Music />
               {translate('auto.components.right.sidebar.OrcaStreamPanel.suno', 'Suno')}
             </TabsTrigger>
+            <TabsTrigger value="audio">
+              <Volume2 />
+              {translate('auto.components.right.sidebar.OrcaStreamPanel.audio', 'Audio')}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
       <StreamControlsBar />
       <StreamModeHookError />
-      <div className="min-h-0 flex-1">{tab === 'chat' ? <TwitchChatPanel /> : <SunoPanel />}</div>
+      <div className="min-h-0 flex-1">
+        {tab === 'chat' ? (
+          <TwitchChatPanel />
+        ) : tab === 'suno' ? (
+          <SunoPanel />
+        ) : (
+          <StreamAudioPanel />
+        )}
+      </div>
     </div>
   )
 }

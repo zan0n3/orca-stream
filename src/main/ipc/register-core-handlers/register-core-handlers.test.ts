@@ -291,6 +291,10 @@ vi.mock('../suno-music', () => ({
   registerSunoMusicHandlers: vi.fn()
 }))
 
+vi.mock('../stream-audio', () => ({
+  registerStreamAudioHandlers: vi.fn()
+}))
+
 vi.mock('../session', () => ({
   registerSessionHandlers: registerSessionHandlersMock
 }))

@@ -51,8 +51,28 @@ export type ObsSession = {
   close: () => void
 }
 
+export type ObsSessionOptions = {
+  /** obs-websocket EventSubscription bitmask; 0 (default) receives no events. */
+  eventSubscriptions?: number
+  onEvent?: (eventType: string, eventData: Record<string, unknown>) => void
+  /** Called once if the socket closes after the session was identified. */
+  onClose?: () => void
+}
+
+const eventSchema = z.object({
+  op: z.literal(5),
+  d: z.object({
+    eventType: z.string(),
+    eventData: z.record(z.string(), z.unknown()).optional()
+  })
+})
+
 /** Opens an identified obs-websocket v5 session; callers close it when done. */
-export function openObsSession(url: string, password: string | null): Promise<ObsSession> {
+export function openObsSession(
+  url: string,
+  password: string | null,
+  options: ObsSessionOptions = {}
+): Promise<ObsSession> {
   return new Promise((resolve, reject) => {
     const socket = new WebSocket(url, { handshakeTimeout: CONNECT_TIMEOUT_MS })
     const pending = new Map<
@@ -77,6 +97,9 @@ export function openObsSession(url: string, password: string | null): Promise<Ob
     socket.on('error', (error) => fail(new Error(`Could not reach OBS: ${error.message}`)))
     socket.on('close', (code) => {
       clearTimeout(timer)
+      if (identified) {
+        options.onClose?.()
+      }
       // Why 4009: obs-websocket's "authentication failed" close code.
       fail(
         new Error(
@@ -104,7 +127,7 @@ export function openObsSession(url: string, password: string | null): Promise<Ob
             op: 1,
             d: {
               rpcVersion: 1,
-              eventSubscriptions: 0,
+              eventSubscriptions: options.eventSubscriptions ?? 0,
               ...(auth && password
                 ? { authentication: obsAuthString(password, auth.salt, auth.challenge) }
                 : {})
@@ -139,6 +162,13 @@ export function openObsSession(url: string, password: string | null): Promise<Ob
           close: () => socket.close()
         })
         return
+      }
+      if (options.onEvent) {
+        const event = eventSchema.safeParse(message)
+        if (event.success) {
+          options.onEvent(event.data.d.eventType, event.data.d.eventData ?? {})
+          return
+        }
       }
       const response = responseSchema.safeParse(message)
       if (response.success) {

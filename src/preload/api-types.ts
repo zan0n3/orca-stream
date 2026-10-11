@@ -21,6 +21,7 @@ import type { AiVaultApi } from './api/ai-vault-api'
 import type { TwitchChatApi } from './api/twitch-chat-api'
 import type { StreamModeApi, StreamOverlayApi, StreamPrivacyApi } from './api/stream-overlay-api'
 import type { SunoMusicApi } from './api/suno-music-api'
+import type { StreamAudioApi } from './api/stream-audio-api'
 import type { AppApi, E2EApi, PlatformApi } from './api/app-api'
 import type { AutomationsApi } from './api/automation-api'
 import type { BrowserApi } from './api/browser-api'
@@ -109,6 +110,7 @@ export type PreloadApi = {
   streamMode: StreamModeApi
   streamPrivacy: StreamPrivacyApi
   sunoMusic: SunoMusicApi
+  streamAudio: StreamAudioApi
   localhostWorktreeLabels: LocalhostWorktreeLabelsApi
   keybindings: KeybindingsApi
   codexAccounts: CodexAccountsApi

@@ -54,6 +54,7 @@ import { registerStreamOverlayHandlers } from '../stream-overlay'
 import { registerStreamModeHandlers } from '../stream-mode'
 import { registerStreamPrivacyHandlers } from '../stream-privacy'
 import { registerSunoMusicHandlers } from '../suno-music'
+import { registerStreamAudioHandlers } from '../stream-audio'
 import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerEmulatorFrameStreamHandlers } from '../emulator-frame-stream'
@@ -217,6 +218,7 @@ export function registerCoreHandlers(
   registerStreamModeHandlers(store)
   registerStreamPrivacyHandlers()
   registerSunoMusicHandlers()
+  registerStreamAudioHandlers()
   registerSessionHandlers(store, runtime)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
   registerEmulatorFrameStreamHandlers()
