@@ -1,11 +1,13 @@
 import type { SunoStreamState } from '../../shared/suno-music'
 import type { ObsSession } from './obs-websocket-session'
+import type { MusicPlayerControl } from './spotify-player-control'
 
 export const SUNO_OBS_INPUT = 'Orca Suno track'
 // Why ~-18 dB, not mute: a bed of music under the song sounds like a DJ handover, not a cut.
 const DUCKED_FACTOR = 0.12
 const FADE_STEPS = 12
 const FADE_MS = 1500
+const RESUME_FADE_MS = 3000
 const POLL_MS = 1000
 // Why: OBS reports OPENING/NONE until ffmpeg has the file; give up if it never starts.
 const START_TIMEOUT_MS = 10_000
@@ -13,12 +15,16 @@ const START_TIMEOUT_MS = 10_000
 type SunoStreamPlayerOptions = {
   openSession: () => Promise<ObsSession>
   onChange: (state: SunoStreamState) => void
+  /** When the music app is playing it is paused instead of ducked, so the streamer hears the song alone. */
+  musicPlayer?: MusicPlayerControl | null
   sleep?: (ms: number) => Promise<void>
 }
 
 type MusicInput = { name: string; volumeMul: number }
 
 type Playback = { stopRequested: boolean; done: Promise<void> }
+
+type MusicHandling = { ducked: MusicInput | null; pausedPlayer: boolean }
 
 function list(response: Record<string, unknown>, key: string): unknown[] {
   const value = response[key]
@@ -78,7 +84,7 @@ export class SunoStreamPlayer {
   private async start(filePath: string, fileName: string): Promise<void> {
     this.setState({ playing: null, busy: true, error: null })
     let session: ObsSession | null = null
-    let ducked: MusicInput | null = null
+    const handling: MusicHandling = { ducked: null, pausedPlayer: false }
     try {
       session = await this.options.openSession()
       await this.ensureInput(session, filePath)
@@ -87,8 +93,10 @@ export class SunoStreamPlayer {
         inputName: SUNO_OBS_INPUT,
         inputVolumeMul: music?.volumeMul ?? 1
       })
-      if (music) {
-        ducked = music
+      // Why fall back: a song must still play if the music app ignores the pause.
+      handling.pausedPlayer = await this.pauseMusicPlayer().catch(() => false)
+      if (music && !handling.pausedPlayer) {
+        handling.ducked = music
         await this.fade(session, music.name, music.volumeMul, music.volumeMul * DUCKED_FACTOR)
       }
       await session.request('TriggerMediaInputAction', {
@@ -96,15 +104,19 @@ export class SunoStreamPlayer {
         mediaAction: 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART'
       })
       const playback: Playback = { stopRequested: false, done: Promise.resolve() }
-      playback.done = this.watch(session, music, playback)
+      playback.done = this.watch(session, handling, playback)
       this.playback = playback
       session = null
       this.setState({ playing: fileName, busy: false, error: null })
     } catch (error) {
+      const { ducked } = handling
       if (session && ducked) {
         await session
           .request('SetInputVolume', { inputName: ducked.name, inputVolumeMul: ducked.volumeMul })
           .catch(() => {})
+      }
+      if (handling.pausedPlayer) {
+        await this.resumeMusicPlayer().catch(() => {})
       }
       this.setState({ playing: null, busy: false, error: errorMessage(error) })
     } finally {
@@ -114,7 +126,7 @@ export class SunoStreamPlayer {
 
   private async watch(
     session: ObsSession,
-    music: MusicInput | null,
+    handling: MusicHandling,
     playback: Playback
   ): Promise<void> {
     let error: string | null = null
@@ -144,8 +156,12 @@ export class SunoStreamPlayer {
       error = errorMessage(caught)
     }
     try {
+      const music = handling.ducked
       if (music) {
         await this.fade(session, music.name, music.volumeMul * DUCKED_FACTOR, music.volumeMul)
+      }
+      if (handling.pausedPlayer) {
+        await this.resumeMusicPlayer()
       }
     } catch (caught) {
       error ??= `Could not restore the music volume: ${errorMessage(caught)}`
@@ -156,6 +172,53 @@ export class SunoStreamPlayer {
       this.playback = null
     }
     this.setState({ playing: null, busy: false, error })
+  }
+
+  /** Fades the music app out and pauses it; its volume is put back while paused. */
+  private async pauseMusicPlayer(): Promise<boolean> {
+    const player = this.options.musicPlayer
+    if (!player || !(await player.isPlaying())) {
+      return false
+    }
+    const volume = await player.getVolume()
+    try {
+      await this.rampPlayer(player, volume, 0, FADE_MS)
+      await player.pause()
+    } finally {
+      await player.setVolume(volume)
+    }
+    return true
+  }
+
+  private async resumeMusicPlayer(): Promise<void> {
+    const player = this.options.musicPlayer
+    // Why check: the streamer may have pressed play themselves during the song.
+    if (!player || (await player.isPlaying())) {
+      return
+    }
+    const volume = await player.getVolume()
+    try {
+      await player.setVolume(0)
+      await player.play()
+      await this.rampPlayer(player, 0, volume, RESUME_FADE_MS)
+    } finally {
+      // Why: never leave the app silent if a step failed mid-fade.
+      await player.setVolume(volume)
+    }
+  }
+
+  private async rampPlayer(
+    player: MusicPlayerControl,
+    from: number,
+    to: number,
+    durationMs: number
+  ): Promise<void> {
+    for (let step = 1; step <= FADE_STEPS; step++) {
+      await player.setVolume(from + ((to - from) * step) / FADE_STEPS)
+      if (step < FADE_STEPS) {
+        await this.sleep(durationMs / FADE_STEPS)
+      }
+    }
   }
 
   private async ensureInput(session: ObsSession, filePath: string): Promise<void> {

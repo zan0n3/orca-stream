@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { ObsSession } from './obs-websocket-session'
 import { SUNO_OBS_INPUT, SunoStreamPlayer } from './suno-stream-player'
+import type { MusicPlayerControl } from './spotify-player-control'
 
-function fakeObs(options: { mediaStates: string[]; hasSunoInput?: boolean }) {
+function fakeObs(options: {
+  mediaStates: string[]
+  hasSunoInput?: boolean
+  musicPlayer?: MusicPlayerControl
+}) {
   const calls: [string, Record<string, unknown> | undefined][] = []
   const mediaStates = [...options.mediaStates]
   let closed = 0
@@ -46,6 +51,7 @@ function fakeObs(options: { mediaStates: string[]; hasSunoInput?: boolean }) {
   const player = new SunoStreamPlayer({
     openSession: async () => session,
     onChange: () => {},
+    musicPlayer: options.musicPlayer,
     sleep: async () => {}
   })
   const musicVolumes = () =>
@@ -110,5 +116,65 @@ describe('SunoStreamPlayer', () => {
     await settle(player)
     expect(player.getState().error).toBe('OBS could not play this file.')
     expect(musicVolumes().at(-1)).toBeCloseTo(0.5)
+  })
+
+  it('pauses a playing music app instead of ducking, then fades it back in', async () => {
+    const events: string[] = []
+    let playing = true
+    let volume = 0.6
+    const musicPlayer: MusicPlayerControl = {
+      isPlaying: async () => playing,
+      pause: async () => {
+        events.push(`pause@${volume.toFixed(2)}`)
+        playing = false
+      },
+      play: async () => {
+        events.push(`play@${volume.toFixed(2)}`)
+        playing = true
+      },
+      getVolume: async () => volume,
+      setVolume: async (next) => {
+        volume = next
+      }
+    }
+    const { player, musicVolumes } = fakeObs({
+      mediaStates: ['OBS_MEDIA_STATE_PLAYING', 'OBS_MEDIA_STATE_ENDED'],
+      musicPlayer
+    })
+    await player.play('/music/Suno/song.mp3', 'song.mp3')
+    expect(events).toEqual(['pause@0.00'])
+    // Paused with its volume put back, and the OBS music input left alone.
+    expect(volume).toBeCloseTo(0.6)
+    expect(musicVolumes()).toEqual([])
+    await settle(player)
+    expect(events).toEqual(['pause@0.00', 'play@0.00'])
+    expect(volume).toBeCloseTo(0.6)
+    expect(playing).toBe(true)
+  })
+
+  it('leaves the music app alone when the streamer already resumed it', async () => {
+    const events: string[] = []
+    let playing = true
+    const musicPlayer: MusicPlayerControl = {
+      isPlaying: async () => playing,
+      pause: async () => {
+        events.push('pause')
+        playing = false
+      },
+      play: async () => {
+        events.push('play')
+      },
+      getVolume: async () => 0.6,
+      setVolume: async () => {}
+    }
+    const { player } = fakeObs({
+      hasSunoInput: true,
+      mediaStates: Array(100).fill('OBS_MEDIA_STATE_PLAYING'),
+      musicPlayer
+    })
+    await player.play('/music/Suno/song.mp3', 'song.mp3')
+    playing = true
+    await player.stop()
+    expect(events).toEqual(['pause'])
   })
 })

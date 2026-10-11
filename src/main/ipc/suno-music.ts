@@ -11,6 +11,7 @@ import { SUNO_TRACK_EXTENSIONS } from '../../shared/suno-music'
 import { readObsWebsocketConfig } from '../obs/obs-websocket-config'
 import { openObsSession } from '../obs/obs-websocket-session'
 import { SunoStreamPlayer } from '../obs/suno-stream-player'
+import { createSpotifyPlayerControl } from '../obs/spotify-player-control'
 import {
   importSunoSongLink,
   importSunoTrackFiles,
@@ -64,7 +65,8 @@ export function registerSunoMusicHandlers(): void {
       const config = await readObsWebsocketConfig()
       return openObsSession(config.url, config.password)
     },
-    onChange: (state) => broadcast('suno:streamChanged', state)
+    onChange: (state) => broadcast('suno:streamChanged', state),
+    musicPlayer: createSpotifyPlayerControl()
   })
   const directory = getSunoMusicDirectory()
   const driver = new SunoWebDriver({
