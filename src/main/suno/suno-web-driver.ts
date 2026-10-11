@@ -145,7 +145,11 @@ export class SunoWebDriver {
           throw new Error('The Suno tab was closed while the song was generating.')
         }
         const clips: PageClip[] = await page.executeJavaScript(LIST_CLIPS_SCRIPT, true)
-        const fresh = clips.filter((clip) => !before.has(clip.id)).slice(0, TAKES_PER_CREATE)
+        // Why match the title: songs made elsewhere at the same time also appear as new rows.
+        const wanted = title.trim().toLowerCase()
+        const fresh = clips
+          .filter((clip) => !before.has(clip.id) && clip.title.trim().toLowerCase() === wanted)
+          .slice(0, TAKES_PER_CREATE)
         this.setJob({
           ...this.job,
           clips: fresh.map((clip) => ({
