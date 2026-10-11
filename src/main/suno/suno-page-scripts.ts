@@ -110,15 +110,23 @@ export function togglePlayScript(id: string): string {
 export function downloadMp3Script(id: string): string {
   return String.raw`(async () => {
     ${PAGE_HELPERS}
+    const dialog = () => document.querySelector('[role=dialog]')
+    // A dialog left open by an earlier attempt would swallow the clicks below.
+    const leftover = dialog() && dialog().querySelector('[aria-label="Close"]')
+    if (leftover) {
+      press(leftover)
+      await waitFor(() => !dialog(), 3000, 'the old dialog to close').catch(() => null)
+    }
     const row = clipRow(${JSON.stringify(id)})
     if (!row) throw new Error('Suno page: that song is not in the list.')
     press(row.querySelector('[aria-label="More options"]'))
     press(await waitFor(() => byText('[role=menuitem]', 'Download'), 5000, 'the Download menu item'))
-    const dialog = () => document.querySelector('[role=dialog]')
-    press(await waitFor(() => dialog() && byText('button', 'MP3', dialog()), 5000, 'the MP3 option'))
+    const mp3 = await waitFor(() => dialog() && byText('button', 'MP3', dialog()), 5000, 'the MP3 option')
+    // Why check first: formats are toggles and Suno remembers the last one, so pressing a ticked MP3 unticks it.
+    if (!mp3.querySelector('svg')) press(mp3)
     const unlock = await waitFor(() => {
       const button = dialog() && byText('button', 'Unlock & Download', dialog())
-      return button && !button.disabled ? button : null
+      return button && !button.disabled && mp3.querySelector('svg') ? button : null
     }, 15000, 'an enabled Unlock & Download button').catch(() => null)
     if (!unlock) return null
     unlock.scrollIntoView({ block: 'center' })

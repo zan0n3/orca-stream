@@ -19,6 +19,9 @@ const POLL_MS = 3000
 // Why 8 min: Suno usually finishes in 1-3 min, but queues stretch under load.
 const GENERATION_TIMEOUT_MS = 8 * 60_000
 const DOWNLOAD_TIMEOUT_MS = 90_000
+const CLICK_ATTEMPTS = 2
+// Suno takes 5-10 s to prepare the MP3; re-clicking sooner could spend a second monthly download.
+const CLICK_SETTLE_MS = 15_000
 // Suno makes two takes per Create.
 const TAKES_PER_CREATE = 2
 
@@ -99,7 +102,7 @@ export class SunoWebDriver {
         saved.cancel()
         throw new Error('Suno did not offer the MP3 download. Check the Suno tab.')
       }
-      this.trustedClick(page, point)
+      await this.clickUntilDownloadStarts(page, point, saved.started)
       const savedPath = await saved.done
       await mkdir(this.options.directory, { recursive: true })
       const fileName = `${sunoTrackFileStem(clip.title, clipId)}${path.extname(savedPath) || '.mp3'}`
@@ -171,6 +174,30 @@ export class SunoWebDriver {
     }
   }
 
+  // Why retry: Suno re-renders the dialog after a format change, so one click can land mid-update.
+  private async clickUntilDownloadStarts(
+    page: WebContents,
+    point: { x: number; y: number },
+    started: () => boolean
+  ): Promise<void> {
+    for (let attempt = 0; attempt < CLICK_ATTEMPTS; attempt++) {
+      this.trustedClick(page, point)
+      for (let waited = 0; waited < CLICK_SETTLE_MS; waited += 500) {
+        await this.sleep(500)
+        if (started()) {
+          return
+        }
+      }
+      const dialogOpen: boolean = await page.executeJavaScript(
+        "Boolean(document.querySelector('[role=dialog]'))",
+        true
+      )
+      if (!dialogOpen) {
+        return
+      }
+    }
+  }
+
   private trustedClick(page: WebContents, point: { x: number; y: number }): void {
     const zoom = page.getZoomFactor()
     const x = Math.round(point.x * zoom)
@@ -181,12 +208,17 @@ export class SunoWebDriver {
   }
 
   // Why observe instead of redirect: Orca's own download manager owns the save path and the UI.
-  private nextDownload(page: WebContents): { done: Promise<string>; cancel: () => void } {
+  private nextDownload(page: WebContents): {
+    done: Promise<string>
+    cancel: () => void
+    started: () => boolean
+  } {
     const session = page.session
     let listener:
       | ((event: Electron.Event, item: Electron.DownloadItem, from: WebContents) => void)
       | null = null
     let timer: NodeJS.Timeout | null = null
+    let didStart = false
     const cancel = (): void => {
       if (listener) {
         session.removeListener('will-download', listener)
@@ -204,6 +236,7 @@ export class SunoWebDriver {
         if (from.id !== page.id) {
           return
         }
+        didStart = true
         cancel()
         item.once('done', (_doneEvent, state) => {
           if (state === 'completed') {
@@ -215,7 +248,7 @@ export class SunoWebDriver {
       }
       session.on('will-download', listener)
     })
-    return { done, cancel }
+    return { done, cancel, started: () => didStart }
   }
 
   private setJob(job: SunoCreateJob): void {
