@@ -287,6 +287,10 @@ vi.mock('../stream-privacy', () => ({
   registerStreamPrivacyHandlers: vi.fn()
 }))
 
+vi.mock('../suno-music', () => ({
+  registerSunoMusicHandlers: vi.fn()
+}))
+
 vi.mock('../session', () => ({
   registerSessionHandlers: registerSessionHandlersMock
 }))

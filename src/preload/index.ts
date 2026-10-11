@@ -33,6 +33,7 @@ import { settingsApi } from './api/settings-bridge'
 import { agentAwakeApi } from './api/agent-awake-bridge'
 import { twitchChatApi } from './api/twitch-chat-bridge'
 import { streamModeApi, streamOverlayApi, streamPrivacyApi } from './api/stream-overlay-bridge'
+import { sunoMusicApi } from './api/suno-music-bridge'
 import { localhostWorktreeLabelsApi } from './api/localhost-worktree-labels-bridge'
 import { keybindingsApi } from './api/keybindings-bridge'
 import { codexAccountsApi } from './api/codex-accounts-bridge'
@@ -137,6 +138,7 @@ const api = {
   streamOverlay: streamOverlayApi,
   streamMode: streamModeApi,
   streamPrivacy: streamPrivacyApi,
+  sunoMusic: sunoMusicApi,
   localhostWorktreeLabels: localhostWorktreeLabelsApi,
   keybindings: keybindingsApi,
   codexAccounts: codexAccountsApi,

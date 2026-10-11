@@ -120,7 +120,7 @@ export function useRightSidebarActivityItems({
             {
               id: 'twitch-chat' as const,
               icon: MessageSquare,
-              title: translate('auto.components.right.sidebar.index.twitchChat', 'Twitch Chat'),
+              title: translate('auto.components.right.sidebar.index.orcaStream', 'Orca Stream'),
               shortcut: ''
             }
           ]

@@ -13636,7 +13636,7 @@
             "aiVaultSessionHistory": "Agents",
             "folderWorkspaces": "Attached worktrees",
             "parentPrChecks": "PR Checks",
-            "twitchChat": "Twitch Chat"
+            "orcaStream": "Orca Stream"
           },
           "right": {
             "panel": {
@@ -14285,6 +14285,52 @@
             "on": "Unblur",
             "off": "Blur",
             "hint": "Blurs your screen capture in OBS so viewers can’t read it. Your own screen stays sharp."
+          },
+          "OrcaStreamPanel": {
+            "chat": "Chat",
+            "suno": "Suno"
+          },
+          "SunoPanel": {
+            "copied": "{{what}} copied",
+            "ideaLabel": "Song idea",
+            "ideaHint": "Describe the vibe, topic and genre. AI drafts the lyrics and Suno style.",
+            "ideaPlaceholder": "A lo-fi hype track about shipping code at 2am with an orca mascot",
+            "writing": "Writing lyrics…",
+            "rewrite": "Write new lyrics",
+            "write": "Write lyrics",
+            "title": "Title",
+            "style": "Style of music",
+            "lyrics": "Lyrics",
+            "copyLyrics": "Copy lyrics",
+            "copyStyle": "Copy style",
+            "feedbackLabel": "What to change",
+            "feedbackPlaceholder": "Change something… e.g. punchier chorus",
+            "revise": "Revise",
+            "songs": "Songs",
+            "refresh": "Refresh",
+            "openFolder": "Open song folder",
+            "linkLabel": "Suno song link",
+            "linkPlaceholder": "Paste a suno.com song link",
+            "add": "Add",
+            "onStream": "On stream: {{title}}",
+            "stop": "Stop",
+            "empty": "No songs yet. Paste a Suno link above, or save MP3s into the song folder.",
+            "closePreview": "Close preview",
+            "preview": "Preview (only you hear it)",
+            "send": "Send to stream",
+            "imported": "Added “{{title}}”",
+            "createOnSuno": "Create on Suno",
+            "createHint": "Create on Suno fills Suno’s form in your Orca browser tab and makes two takes (uses Suno credits). Solve any captcha there.",
+            "phaseCreating": "Filling in Suno…",
+            "phaseGenerating": "Suno is making two takes… usually 1–3 minutes",
+            "phaseDownloading": "Downloading MP3…",
+            "phaseReady": "Listen in the Suno tab, then download the take you want.",
+            "take": "Take {{number}}",
+            "generating": "generating…",
+            "playInSuno": "Play or pause in the Suno tab (only you hear it)",
+            "saved": "Saved",
+            "downloadMp3": "Download MP3",
+            "downloadQuota": "Each download uses one of your monthly Suno downloads."
           }
         }
       },

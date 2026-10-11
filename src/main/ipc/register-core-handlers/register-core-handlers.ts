@@ -53,6 +53,7 @@ import { registerTwitchChatHandlers } from '../twitch-chat'
 import { registerStreamOverlayHandlers } from '../stream-overlay'
 import { registerStreamModeHandlers } from '../stream-mode'
 import { registerStreamPrivacyHandlers } from '../stream-privacy'
+import { registerSunoMusicHandlers } from '../suno-music'
 import { registerPluginHandlers } from '../plugins'
 import { registerUIHandlers, setTrustedUIRendererWebContentsId } from '../ui'
 import { registerEmulatorFrameStreamHandlers } from '../emulator-frame-stream'
@@ -215,6 +216,7 @@ export function registerCoreHandlers(
   registerStreamOverlayHandlers(store)
   registerStreamModeHandlers(store)
   registerStreamPrivacyHandlers()
+  registerSunoMusicHandlers()
   registerSessionHandlers(store, runtime)
   registerUIHandlers(store, { isDashboardPopoutRenderer })
   registerEmulatorFrameStreamHandlers()

@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Loader2, MessageSquare } from 'lucide-react'
+import { MessageSquare } from 'lucide-react'
 import { useAppStore } from '@/store'
 import { Button } from '@/components/ui/button'
 import { translate } from '@/i18n/i18n'
@@ -9,15 +9,13 @@ import type {
   TwitchChatMessage
 } from '../../../../shared/twitch-chat-types'
 import { useTwitchChatSnapshot } from './use-twitch-chat-snapshot'
-import { StreamModeButton, StreamModeHookError } from './StreamModeButton'
-import { StreamPrivacyButton } from './StreamPrivacyButton'
 import { TwitchChatComposer } from './TwitchChatComposer'
 import { useTwitchChatAuth } from './use-twitch-chat-auth'
 
 // Why: within this many px of the bottom still counts as "following" so sub-pixel scroll drift doesn't unstick.
 const STICK_TO_BOTTOM_THRESHOLD_PX = 24
 
-function statusLabel(status: TwitchChatConnectionStatus): string {
+export function statusLabel(status: TwitchChatConnectionStatus): string {
   switch (status) {
     case 'connected':
       return translate('auto.components.right.sidebar.TwitchChatPanel.connected', 'Connected')
@@ -50,6 +48,7 @@ function TwitchChatMessageRow({ message }: { message: TwitchChatMessage }): Reac
   )
 }
 
+/** Chat tab of the Orca Stream panel; channel status and stream controls sit above the tabs. */
 export default function TwitchChatPanel(): React.JSX.Element {
   const rawChannel = useAppStore((s) => s.settings?.twitchChatChannel ?? '')
   const openSettingsTarget = useAppStore((s) => s.openSettingsTarget)
@@ -126,22 +125,6 @@ export default function TwitchChatPanel(): React.JSX.Element {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          #{configuredChannel}
-        </span>
-        <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            {status === 'connecting' || status === 'reconnecting' ? (
-              <Loader2 className="size-3 animate-spin" />
-            ) : null}
-            {statusLabel(status)}
-          </span>
-          <StreamPrivacyButton />
-          <StreamModeButton />
-        </span>
-      </div>
-      <StreamModeHookError />
       <div className="relative min-h-0 flex-1">
         <div
           ref={scrollRef}
