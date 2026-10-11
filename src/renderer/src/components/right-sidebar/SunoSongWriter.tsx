@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Copy, Loader2, Music, Piano, Sparkles, Wand2 } from 'lucide-react'
+import { Copy, Loader2, Music, Piano, RotateCcw, Sparkles, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,6 +94,12 @@ export function SunoSongWriter({
     }
   }
 
+  const reset = (): void => {
+    setIdea('')
+    setFeedback('')
+    setDraft(null, '')
+  }
+
   const updateDraft = (key: keyof SunoSongDraft, value: string): void => {
     if (draft) {
       setDraft({ ...draft, [key]: value })
@@ -153,6 +159,15 @@ export function SunoSongWriter({
                   'Writing style…'
                 )
               : translate('auto.components.right.sidebar.SunoPanel.instrumental', 'Instrumental')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={writing !== null || (!idea.trim() && !draft)}
+            onClick={reset}
+          >
+            <RotateCcw />
+            {translate('auto.components.right.sidebar.SunoPanel.reset', 'Reset')}
           </Button>
         </div>
       </div>

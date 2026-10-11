@@ -14333,7 +14333,8 @@
             "downloadQuota": "Each download uses one of your monthly Suno downloads.",
             "writingInstrumental": "Writing style…",
             "instrumental": "Instrumental",
-            "instrumentalNote": "Instrumental: no lyrics, so Suno makes music only."
+            "instrumentalNote": "Instrumental: no lyrics, so Suno makes music only.",
+            "reset": "Reset"
           }
         }
       },
