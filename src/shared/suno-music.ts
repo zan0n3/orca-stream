@@ -18,6 +18,8 @@ export type SunoLyricsRequest = {
   /** Set when revising: the current draft plus what to change. */
   previous?: SunoSongDraft
   feedback?: string
+  /** No vocals: the draft comes back with empty lyrics, which Suno treats as instrumental. */
+  instrumental?: boolean
 }
 
 export type SunoStreamState = {
@@ -77,7 +79,7 @@ export function sunoTrackFileStem(title: string, songId: string): string {
 }
 
 /** Parses the lyrics writer's reply; tolerates a ```json fence around the object. */
-export function parseSunoSongDraft(output: string): SunoSongDraft | null {
+export function parseSunoSongDraft(output: string, instrumental = false): SunoSongDraft | null {
   const start = output.indexOf('{')
   const end = output.lastIndexOf('}')
   if (start === -1 || end <= start) {
@@ -95,6 +97,10 @@ export function parseSunoSongDraft(output: string): SunoSongDraft | null {
   const field = (key: string): string => {
     const raw: unknown = Reflect.get(value, key)
     return typeof raw === 'string' ? raw.trim() : ''
+  }
+  if (instrumental) {
+    const style = field('style')
+    return style ? { title: field('title'), style, lyrics: '' } : null
   }
   const draft = { title: field('title'), style: field('style'), lyrics: field('lyrics') }
   return draft.lyrics ? draft : null

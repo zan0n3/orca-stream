@@ -52,3 +52,12 @@ describe('parseSunoSongDraft', () => {
     expect(parseSunoSongDraft('sorry, no')).toBeNull()
   })
 })
+
+describe('parseSunoSongDraft for instrumentals', () => {
+  it('keeps a style-only reply and drops any lyrics', () => {
+    expect(
+      parseSunoSongDraft('{"title":"Deep","style":"instrumental lofi","lyrics":"la"}', true)
+    ).toEqual({ title: 'Deep', style: 'instrumental lofi', lyrics: '' })
+    expect(parseSunoSongDraft('{"title":"Deep","lyrics":""}', true)).toBeNull()
+  })
+})

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Copy, Loader2, Music, Sparkles, Wand2 } from 'lucide-react'
+import { Copy, Loader2, Music, Piano, Sparkles, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,9 +25,11 @@ function loadStoredDraft(): StoredDraft {
       }
       return {
         idea: typeof idea === 'string' ? idea : '',
-        draft: text('lyrics')
-          ? { title: text('title'), style: text('style'), lyrics: text('lyrics') }
-          : null
+        // Why style too: an instrumental draft has no lyrics.
+        draft:
+          text('lyrics') || text('style')
+            ? { title: text('title'), style: text('style'), lyrics: text('lyrics') }
+            : null
       }
     }
   } catch {
@@ -66,18 +68,20 @@ export function SunoSongWriter({
   const [idea, setIdea] = useState(stored.idea)
   const [draft, setDraftState] = useState<SunoSongDraft | null>(stored.draft)
   const [feedback, setFeedback] = useState('')
-  const [writing, setWriting] = useState(false)
+  const [writing, setWriting] = useState<'lyrics' | 'instrumental' | null>(null)
 
   const setDraft = (next: SunoSongDraft | null, nextIdea = idea): void => {
     setDraftState(next)
     storeDraft({ idea: nextIdea, draft: next })
   }
 
-  const write = async (revise: boolean): Promise<void> => {
-    setWriting(true)
+  const write = async (revise: boolean, instrumentalRequest = false): Promise<void> => {
+    // Why: a revision keeps the draft's kind; an instrumental draft is one without lyrics.
+    const instrumental = revise && draft ? !draft.lyrics.trim() : instrumentalRequest
+    setWriting(instrumental ? 'instrumental' : 'lyrics')
     try {
       const next = await window.api.sunoMusic.writeLyrics(
-        revise && draft ? { idea, previous: draft, feedback } : { idea }
+        revise && draft ? { idea, previous: draft, feedback, instrumental } : { idea, instrumental }
       )
       setDraft(next)
       if (revise) {
@@ -86,7 +90,7 @@ export function SunoSongWriter({
     } catch (error) {
       toast.error(sunoErrorMessage(error))
     } finally {
-      setWriting(false)
+      setWriting(null)
     }
   }
 
@@ -123,14 +127,34 @@ export function SunoSongWriter({
             storeDraft({ idea: event.target.value, draft })
           }}
         />
-        <Button size="sm" disabled={writing || !idea.trim()} onClick={() => void write(false)}>
-          {writing ? <Loader2 className="animate-spin" /> : <Sparkles />}
-          {writing
-            ? translate('auto.components.right.sidebar.SunoPanel.writing', 'Writing lyrics…')
-            : draft
-              ? translate('auto.components.right.sidebar.SunoPanel.rewrite', 'Write new lyrics')
-              : translate('auto.components.right.sidebar.SunoPanel.write', 'Write lyrics')}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={writing !== null || !idea.trim()}
+            onClick={() => void write(false)}
+          >
+            {writing === 'lyrics' ? <Loader2 className="animate-spin" /> : <Sparkles />}
+            {writing === 'lyrics'
+              ? translate('auto.components.right.sidebar.SunoPanel.writing', 'Writing lyrics…')
+              : draft
+                ? translate('auto.components.right.sidebar.SunoPanel.rewrite', 'Write new lyrics')
+                : translate('auto.components.right.sidebar.SunoPanel.write', 'Write lyrics')}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={writing !== null || !idea.trim()}
+            onClick={() => void write(false, true)}
+          >
+            {writing === 'instrumental' ? <Loader2 className="animate-spin" /> : <Piano />}
+            {writing === 'instrumental'
+              ? translate(
+                  'auto.components.right.sidebar.SunoPanel.writingInstrumental',
+                  'Writing style…'
+                )
+              : translate('auto.components.right.sidebar.SunoPanel.instrumental', 'Instrumental')}
+          </Button>
+        </div>
       </div>
 
       {draft ? (
@@ -156,32 +180,43 @@ export function SunoSongWriter({
               onChange={(event) => updateDraft('style', event.target.value)}
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="suno-lyrics">
-              {translate('auto.components.right.sidebar.SunoPanel.lyrics', 'Lyrics')}
-            </Label>
-            <Textarea
-              id="suno-lyrics"
-              rows={12}
-              variant="code"
-              value={draft.lyrics}
-              onChange={(event) => updateDraft('lyrics', event.target.value)}
-            />
-          </div>
+          {draft.lyrics.trim() ? (
+            <div className="space-y-1">
+              <Label htmlFor="suno-lyrics">
+                {translate('auto.components.right.sidebar.SunoPanel.lyrics', 'Lyrics')}
+              </Label>
+              <Textarea
+                id="suno-lyrics"
+                rows={12}
+                variant="code"
+                value={draft.lyrics}
+                onChange={(event) => updateDraft('lyrics', event.target.value)}
+              />
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              {translate(
+                'auto.components.right.sidebar.SunoPanel.instrumentalNote',
+                'Instrumental: no lyrics, so Suno makes music only.'
+              )}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="xs"
-              onClick={() =>
-                copy(
-                  draft.lyrics,
-                  translate('auto.components.right.sidebar.SunoPanel.lyrics', 'Lyrics')
-                )
-              }
-            >
-              <Copy />
-              {translate('auto.components.right.sidebar.SunoPanel.copyLyrics', 'Copy lyrics')}
-            </Button>
+            {draft.lyrics.trim() ? (
+              <Button
+                variant="outline"
+                size="xs"
+                onClick={() =>
+                  copy(
+                    draft.lyrics,
+                    translate('auto.components.right.sidebar.SunoPanel.lyrics', 'Lyrics')
+                  )
+                }
+              >
+                <Copy />
+                {translate('auto.components.right.sidebar.SunoPanel.copyLyrics', 'Copy lyrics')}
+              </Button>
+            ) : null}
             <Button
               variant="outline"
               size="xs"
@@ -197,7 +232,9 @@ export function SunoSongWriter({
             </Button>
             <Button
               size="xs"
-              disabled={creating || writing || !draft.lyrics.trim()}
+              disabled={
+                creating || writing !== null || !(draft.lyrics.trim() || draft.style.trim())
+              }
               onClick={() => onCreate(draft)}
             >
               {creating ? <Loader2 className="animate-spin" /> : <Music />}
@@ -221,7 +258,7 @@ export function SunoSongWriter({
           >
             <Input
               value={feedback}
-              disabled={writing}
+              disabled={writing !== null}
               aria-label={translate(
                 'auto.components.right.sidebar.SunoPanel.feedbackLabel',
                 'What to change'
@@ -236,7 +273,7 @@ export function SunoSongWriter({
               type="submit"
               variant="secondary"
               size="sm"
-              disabled={writing || !feedback.trim()}
+              disabled={writing !== null || !feedback.trim()}
             >
               <Wand2 />
               {translate('auto.components.right.sidebar.SunoPanel.revise', 'Revise')}

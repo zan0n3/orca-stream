@@ -14330,7 +14330,10 @@
             "playInSuno": "Play or pause in the Suno tab (only you hear it)",
             "saved": "Saved",
             "downloadMp3": "Download MP3",
-            "downloadQuota": "Each download uses one of your monthly Suno downloads."
+            "downloadQuota": "Each download uses one of your monthly Suno downloads.",
+            "writingInstrumental": "Writing style…",
+            "instrumental": "Instrumental",
+            "instrumentalNote": "Instrumental: no lyrics, so Suno makes music only."
           }
         }
       },

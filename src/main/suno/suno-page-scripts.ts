@@ -58,10 +58,13 @@ export function fillAndCreateScript(draft: {
       await waitFor(() => editor() && editor().innerText.trim() === '', 5000, 'an empty lyrics editor')
     }
     const lyrics = editor()
-    lyrics.focus()
-    const data = new DataTransfer()
-    data.setData('text/plain', draft.lyrics)
-    lyrics.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+    // Empty lyrics make Suno generate an instrumental.
+    if (draft.lyrics.trim()) {
+      lyrics.focus()
+      const data = new DataTransfer()
+      data.setData('text/plain', draft.lyrics)
+      lyrics.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }))
+    }
     let form = lyrics
     while (form && !(form.querySelector('textarea[maxlength="1000"]') && form.querySelector('input[placeholder^="Song Title"]'))) {
       form = form.parentElement

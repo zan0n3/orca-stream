@@ -11,7 +11,8 @@ Reply with ONLY a JSON object: {"title": string, "style": string, "lyrics": stri
 - title: short, catchy.
 - style: Suno "Style of Music" prompt, under 200 characters: genre, mood, tempo, instruments, vocal type. Never name real artists.
 - lyrics: Suno format with section tags on their own lines ([Intro], [Verse 1], [Chorus], [Bridge], [Outro]); about 2-3 minutes of song; family-friendly; original, never quoting existing songs.
-When given a previous draft and feedback, revise that draft to apply the feedback and keep what wasn't criticised.`
+When given a previous draft and feedback, revise that draft to apply the feedback and keep what wasn't criticised.
+When "instrumental" is true: no vocals. Set lyrics to "" and make the style describe an instrumental track (say "instrumental", no vocal type).`
 
 /** Drafts Suno lyrics with the local Claude CLI (no tools, no session history). */
 export async function writeSunoLyrics(
@@ -43,7 +44,8 @@ export async function writeSunoLyrics(
     input: JSON.stringify({
       idea,
       previousDraft: request.previous,
-      feedback: request.feedback?.trim().slice(0, 1000) || undefined
+      feedback: request.feedback?.trim().slice(0, 1000) || undefined,
+      instrumental: request.instrumental === true
     }),
     timeoutMs: 120_000,
     maxOutputBytes: 64 * 1024
@@ -56,9 +58,9 @@ export async function writeSunoLyrics(
       `The claude CLI failed${result.stderr.trim() ? `: ${result.stderr.trim().slice(0, 300)}` : '.'}`
     )
   }
-  const draft = parseSunoSongDraft(result.stdout)
+  const draft = parseSunoSongDraft(result.stdout, request.instrumental === true)
   if (!draft) {
-    throw new Error('Got an unexpected reply instead of lyrics. Try again.')
+    throw new Error('Got an unexpected reply instead of a song draft. Try again.')
   }
   return draft
 }

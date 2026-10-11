@@ -53,7 +53,9 @@ function lyricsRequest(value: unknown): SunoLyricsRequest {
           lyrics: field(previousRaw, 'lyrics')
         }
       : undefined
-  return { idea: field(value, 'idea'), previous, feedback: field(value, 'feedback') }
+  const instrumental =
+    typeof value === 'object' && value !== null && Reflect.get(value, 'instrumental') === true
+  return { idea: field(value, 'idea'), previous, feedback: field(value, 'feedback'), instrumental }
 }
 
 export function registerSunoMusicHandlers(): void {
@@ -124,8 +126,8 @@ export function registerSunoMusicHandlers(): void {
   ipcMain.handle('suno:getJob', (): SunoCreateJob => driver.getJob())
   ipcMain.handle('suno:createOnSuno', (_event, draft: unknown): Promise<SunoCreateJob> => {
     const request = lyricsRequest({ previous: draft })
-    if (!request.previous?.lyrics.trim()) {
-      return Promise.reject(new Error('Write or paste lyrics first.'))
+    if (!request.previous?.lyrics.trim() && !request.previous?.style.trim()) {
+      return Promise.reject(new Error('Write lyrics or a style first.'))
     }
     return driver.create(request.previous)
   })
