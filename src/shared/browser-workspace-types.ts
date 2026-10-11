@@ -160,6 +160,7 @@ export type BrowserSessionProfileSource = {
   browserFamily:
     | 'chrome'
     | 'chromium'
+    | 'brave'
     | 'arc'
     | 'edge'
     | 'firefox'

@@ -826,7 +826,7 @@ describe('detectInstalledBrowsers', () => {
       expect(browser).toHaveProperty('label')
       expect(browser).toHaveProperty('cookiesPath')
       // keychainService/keychainAccount are only present for Chromium-based browsers
-      if (['chrome', 'edge', 'arc', 'chromium'].includes(browser.family)) {
+      if (['chrome', 'edge', 'arc', 'chromium', 'brave'].includes(browser.family)) {
         expect(browser).toHaveProperty('keychainService')
         expect(browser).toHaveProperty('keychainAccount')
       }
@@ -840,6 +840,7 @@ describe('detectInstalledBrowsers', () => {
       'edge',
       'arc',
       'chromium',
+      'brave',
       'firefox',
       'safari',
       'comet',

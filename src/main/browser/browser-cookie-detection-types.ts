@@ -56,6 +56,16 @@ export const CHROMIUM_BROWSERS: ChromiumBrowserDef[] = [
   },
   {
     family: 'chromium',
+    label: 'Chromium',
+    keychainService: 'Chromium Safe Storage',
+    keychainAccount: 'Chromium',
+    macRoot: 'Chromium',
+    winRoot: 'Chromium/User Data',
+    linuxRoot: 'chromium'
+  },
+  {
+    // Why 'brave': Brave once shared the 'chromium' family, which made a Chromium import pick Brave's cookies.
+    family: 'brave',
     label: 'Brave',
     keychainService: 'Brave Safe Storage',
     keychainAccount: 'Brave',
