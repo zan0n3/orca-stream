@@ -3,6 +3,7 @@ import type { ObsSession } from './obs-websocket-session'
 import type { MusicPlayerControl } from './spotify-player-control'
 
 export const SUNO_OBS_INPUT = 'Orca Suno track'
+const HIDE_COVER_FILTER = 'Hide cover art'
 // Why ~-18 dB, not mute: a bed of music under the song sounds like a DJ handover, not a cut.
 const DUCKED_FACTOR = 0.12
 const FADE_STEPS = 12
@@ -246,6 +247,7 @@ export class SunoStreamPlayer {
     } else {
       await session.request('SetInputSettings', { inputName: SUNO_OBS_INPUT, inputSettings })
     }
+    await this.hideCoverArt(session)
     // Why every scene: a media source only plays in the program scene, and a scene switch mid-song must not cut it.
     for (const scene of list(await session.request('GetSceneList'), 'scenes')) {
       const sceneName = stringField(scene, 'sceneName')
@@ -257,6 +259,23 @@ export class SunoStreamPlayer {
         await session.request('CreateSceneItem', { sceneName, sourceName: SUNO_OBS_INPUT })
       }
     }
+  }
+
+  // Why: Suno MP3s embed a cover image that ffmpeg_source draws as video; the stream only wants the audio.
+  private async hideCoverArt(session: ObsSession): Promise<void> {
+    const filters = list(
+      await session.request('GetSourceFilterList', { sourceName: SUNO_OBS_INPUT }),
+      'filters'
+    )
+    if (filters.some((filter) => stringField(filter, 'filterName') === HIDE_COVER_FILTER)) {
+      return
+    }
+    await session.request('CreateSourceFilter', {
+      sourceName: SUNO_OBS_INPUT,
+      filterName: HIDE_COVER_FILTER,
+      filterKind: 'color_filter_v2',
+      filterSettings: { opacity: 0 }
+    })
   }
 
   private async findMusicInput(session: ObsSession): Promise<MusicInput | null> {

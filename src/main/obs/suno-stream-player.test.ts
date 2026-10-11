@@ -82,6 +82,11 @@ describe('SunoStreamPlayer', () => {
     expect(
       calls.filter(([type]) => type === 'CreateSceneItem').map(([, data]) => data?.sceneName)
     ).toEqual(['Main', 'BRB'])
+    expect(calls.find(([type]) => type === 'CreateSourceFilter')?.[1]).toMatchObject({
+      sourceName: SUNO_OBS_INPUT,
+      filterKind: 'color_filter_v2',
+      filterSettings: { opacity: 0 }
+    })
 
     await settle(player)
     expect(player.getState()).toEqual({ playing: null, busy: false, error: null })
