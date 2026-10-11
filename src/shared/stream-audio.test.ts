@@ -24,7 +24,8 @@ const music: StreamAudioChannel = {
 const heard = (activeRmsDb: number, peakDb = activeRmsDb + 12): StreamAudioWindow => ({
   peakDb,
   activeRmsDb,
-  activity: 0.8
+  activity: activeRmsDb > -50 ? 0.8 : 0,
+  presence: activeRmsDb > -80 ? 0.8 : 0
 })
 
 describe('summarizeWindow', () => {
@@ -34,7 +35,12 @@ describe('summarizeWindow', () => {
       { rmsDb: -20, peakDb: -8 },
       { rmsDb: -18, peakDb: -6 }
     ]
-    expect(summarizeWindow(samples)).toEqual({ peakDb: -6, activeRmsDb: -18, activity: 0.2 })
+    expect(summarizeWindow(samples)).toEqual({
+      peakDb: -6,
+      activeRmsDb: -18,
+      activity: 0.2,
+      presence: 1
+    })
   })
 })
 
@@ -73,6 +79,17 @@ describe('analyzeMusic and analyzeBalance', () => {
     expect(analyzeMusic(music, heard(-33))[0].status).toBe('pass')
   })
 
+  it('calls a very quiet bed quiet, not missing, and points at the app volume past 0 dB', () => {
+    // Measured live: fader -25 dB, bed around -55 dB.
+    const quiet = analyzeMusic({ ...music, volumeDb: -25 }, heard(-55))[0]
+    expect(quiet).toMatchObject({ status: 'warn', suggestion: { volumeDb: -3 } })
+    expect(quiet.message).toContain('very quiet')
+    expect(analyzeMusic({ ...music, volumeDb: -10 }, heard(-55))[0].message).toContain(
+      "music app's own volume"
+    )
+    expect(analyzeMusic(music, heard(-90))[0].message).toContain('No music heard')
+  })
+
   it('wants the voice clearly above the music', () => {
     expect(analyzeBalance(mic, heard(-18), music, heard(-20))[0]).toMatchObject({
       status: 'fail',
@@ -96,5 +113,15 @@ describe('analyzeSetup', () => {
       suno: null
     })
     expect(findings.map((finding) => finding.status)).toEqual(['fail', 'warn', 'pass'])
+  })
+
+  it('does not call the music input a desktop capture when it captures its own sink', () => {
+    const spotifySink: StreamAudioChannel = { ...music, kind: 'pulse_output_capture' }
+    const findings = analyzeSetup([mic, spotifySink], {
+      mic: mic.name,
+      music: music.name,
+      suno: null
+    })
+    expect(findings.every((finding) => finding.status === 'pass')).toBe(true)
   })
 })

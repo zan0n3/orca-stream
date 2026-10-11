@@ -67,23 +67,30 @@ export type StreamAudioWindow = {
   peakDb: number
   /** Loud-part average: the 90th percentile of RMS, so pauses between words don't drag it down. */
   activeRmsDb: number
-  /** Share of samples above -50 dBFS (0-1): whether anything was heard at all. */
+  /** Share of samples above -50 dBFS (0-1): whether someone was talking. */
   activity: number
+  /** Share of samples above -80 dBFS (0-1): whether anything played at all, however quiet. */
+  presence: number
 }
+
+// Why so low: a music bed sits ~35 dB under 0, and a quiet fader pushes it past -50; only digital silence is below this.
+const PRESENCE_FLOOR_DB = -80
 
 export function summarizeWindow(samples: StreamAudioLevel[]): StreamAudioWindow {
   if (samples.length === 0) {
     return {
       peakDb: Number.NEGATIVE_INFINITY,
       activeRmsDb: Number.NEGATIVE_INFINITY,
-      activity: 0
+      activity: 0,
+      presence: 0
     }
   }
   const rms = samples.map((sample) => sample.rmsDb).sort((a, b) => a - b)
   return {
     peakDb: Math.max(...samples.map((sample) => sample.peakDb)),
     activeRmsDb: rms[Math.min(rms.length - 1, Math.floor(rms.length * 0.9))],
-    activity: samples.filter((sample) => sample.rmsDb > -50).length / samples.length
+    activity: samples.filter((sample) => sample.rmsDb > -50).length / samples.length,
+    presence: samples.filter((sample) => sample.rmsDb > PRESENCE_FLOOR_DB).length / samples.length
   }
 }
 
@@ -172,7 +179,7 @@ export function analyzeMusic(
   if (input.muted) {
     return [{ status: 'warn', message: `${input.name} is muted in OBS, so viewers hear no music.` }]
   }
-  if (window.activity < 0.3) {
+  if (window.presence < 0.3) {
     return [
       {
         status: 'warn',
@@ -192,10 +199,11 @@ export function analyzeMusic(
     ]
   }
   if (off < -8) {
+    const maxed = input.volumeDb + -off > FADER_MAX_DB
     return [
       {
         status: 'warn',
-        message: `Music is very quiet (${formatDb(window.activeRmsDb)}, aim for about ${MUSIC_ALONE_TARGET_RMS_DB} dB).`,
+        message: `Music is very quiet, so viewers will barely hear it (${formatDb(window.activeRmsDb)}, aim for about ${MUSIC_ALONE_TARGET_RMS_DB} dB).${maxed ? " The fader can't go past 0 dB, so also turn up the music app's own volume." : ''}`,
         suggestion: { input: input.name, volumeDb: target }
       }
     ]
@@ -210,7 +218,7 @@ export function analyzeBalance(
   music: StreamAudioChannel,
   bed: StreamAudioWindow
 ): StreamAudioFinding[] {
-  if (voice.activity < 0.1 || bed.activity < 0.3) {
+  if (voice.activity < 0.1 || bed.presence < 0.3) {
     return [
       {
         status: 'warn',
@@ -284,8 +292,10 @@ export function analyzeSetup(
   } else if (music.muted) {
     findings.push({ status: 'warn', message: `${music.name} is muted in OBS.` })
   }
+  // Why skip the music input: it is an output capture too, but of its own sink (e.g. a Spotify-only loopback).
   const desktop = channels.filter(
-    (channel) => DESKTOP_CAPTURE_KINDS.has(channel.kind) && !channel.muted
+    (channel) =>
+      DESKTOP_CAPTURE_KINDS.has(channel.kind) && !channel.muted && channel.name !== music?.name
   )
   if (desktop.length > 0 && music) {
     findings.push({
