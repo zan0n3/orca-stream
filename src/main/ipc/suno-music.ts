@@ -21,8 +21,12 @@ import {
 import { writeSunoLyrics } from '../suno/suno-lyrics-writer'
 import { SunoWebDriver } from '../suno/suno-web-driver'
 
+// Why an env override: the stream launcher keeps stream media beside the checkout (git-ignored).
 export function getSunoMusicDirectory(): string {
-  return path.join(app.getPath('music'), 'Suno')
+  const mediaDirectory = process.env.ORCA_STREAM_MEDIA_DIR?.trim()
+  return mediaDirectory
+    ? path.join(mediaDirectory, 'music')
+    : path.join(app.getPath('music'), 'Suno')
 }
 
 function broadcast(channel: string, payload: SunoStreamState | SunoCreateJob): void {
