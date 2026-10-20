@@ -5,8 +5,11 @@ import type { BrowserWindow, Display } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import {
   StreamModeService,
+  describeStreamHookResult,
   pickStreamChatDisplay,
-  streamChatWindowBounds
+  streamChatWindowBounds,
+  streamHookCommand,
+  streamHookFileNames
 } from './stream-mode-service'
 
 function display(id: number, width: number, height: number, x = 0): Display {
@@ -31,7 +34,9 @@ function fakeWindow() {
   return window
 }
 
-function setup(overrides: { hooksDirectory?: string; url?: string | null } = {}) {
+function setup(
+  overrides: { hooksDirectory?: string; url?: string | null; platform?: NodeJS.Platform } = {}
+) {
   const windows: ReturnType<typeof fakeWindow>[] = []
   const runHook = vi.fn(
     async (_file: string, _env: NodeJS.ProcessEnv): Promise<string | null> => null
@@ -50,7 +55,7 @@ function setup(overrides: { hooksDirectory?: string; url?: string | null } = {})
       return window as unknown as BrowserWindow
     },
     onChange,
-    platform: 'linux',
+    platform: overrides.platform ?? 'linux',
     sleep: async () => {},
     runHook
   })
@@ -138,5 +143,52 @@ describe('StreamModeService', () => {
     expect(runHook).not.toHaveBeenCalled()
     expect(windows).toHaveLength(0)
     expect(service.getState().active).toBe(true)
+  })
+})
+
+describe('Windows stream hooks', () => {
+  it('prefers .cmd/.bat/.exe and falls back to .ps1 on Windows only', () => {
+    expect(streamHookFileNames('stream-start', 'win32')).toEqual([
+      'stream-start.cmd',
+      'stream-start.bat',
+      'stream-start.exe',
+      'stream-start.ps1'
+    ])
+    expect(streamHookFileNames('stream-start', 'linux')).toEqual(['stream-start'])
+  })
+
+  it('runs .ps1 through Windows PowerShell without bypassing execution policy', () => {
+    const command = streamHookCommand('C:\\hooks\\stream-start.ps1', 'win32')
+    expect(command.program.toLowerCase()).toMatch(/powershell\.exe$/)
+    expect(command.args).toEqual([
+      '-NoProfile',
+      '-NonInteractive',
+      '-File',
+      'C:\\hooks\\stream-start.ps1'
+    ])
+    expect(command.args.join(' ')).not.toMatch(/ExecutionPolicy|EncodedCommand/i)
+    expect(streamHookCommand('C:\\hooks\\stream-start.cmd', 'win32')).toEqual({
+      program: 'C:\\hooks\\stream-start.cmd',
+      args: []
+    })
+  })
+
+  it('names a blocked PowerShell script even when it exits 0, and keeps CRLF detail clean', () => {
+    expect(
+      describeStreamHookResult('stream-start.ps1', 0, 'see about_Execution_Policies at https://...')
+    ).toContain('stream-start.cmd wrapper')
+    expect(describeStreamHookResult('stream-start.cmd', 1, 'one\r\nobs not found\r\n')).toBe(
+      'stream-start.cmd exited with code 1: obs not found'
+    )
+    expect(describeStreamHookResult('stream-start.cmd', 0, '')).toBeNull()
+  })
+
+  it('finds a .ps1 hook on Windows without requiring an executable bit', async () => {
+    const directory = mkdtempSync(path.join(tmpdir(), 'stream-hooks-'))
+    const file = path.join(directory, 'stream-start.ps1')
+    writeFileSync(file, 'Write-Output hi\n')
+    const { service, runHook } = setup({ hooksDirectory: directory, platform: 'win32' })
+    await service.start()
+    expect(runHook).toHaveBeenCalledWith(file, expect.any(Object))
   })
 })

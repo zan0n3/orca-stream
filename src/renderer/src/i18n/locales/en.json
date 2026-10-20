@@ -12734,6 +12734,7 @@
           },
           "streamModeLabel": "Stream mode",
           "streamModeCopy": "Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs the stream-start script in the scripts folder; End stream runs stream-stop. Use the scripts to launch OBS or arrange windows.",
+          "streamModeCopyWindows": "Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs stream-start.cmd (or .bat, .exe, .ps1) from the scripts folder; End stream runs stream-stop. PowerShell scripts only run if your execution policy allows them, so a .cmd wrapper is the safest choice.",
           "openScripts": "Open scripts folder"
         }
       },

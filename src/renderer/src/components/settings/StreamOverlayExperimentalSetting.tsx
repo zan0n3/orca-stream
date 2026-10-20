@@ -11,6 +11,7 @@ import {
 } from '../../../../shared/stream-overlay'
 import { translate } from '@/i18n/i18n'
 import { isWebClientLocation } from '@/lib/web-client-location'
+import { isWindowsUserAgent } from '../terminal-pane/pane-helpers'
 import { Button } from '../ui/button'
 import { Label } from '../ui/label'
 import { SearchableSetting } from './SearchableSetting'
@@ -208,10 +209,15 @@ export function StreamOverlayExperimentalSetting({
                 {translate('auto.components.settings.streamOverlay.streamModeLabel', 'Stream mode')}
               </Label>
               <p className="text-xs text-muted-foreground">
-                {translate(
-                  'auto.components.settings.streamOverlay.streamModeCopy',
-                  'Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs the stream-start script in the scripts folder; End stream runs stream-stop. Use the scripts to launch OBS or arrange windows.'
-                )}
+                {isWindowsUserAgent()
+                  ? translate(
+                      'auto.components.settings.streamOverlay.streamModeCopyWindows',
+                      'Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs stream-start.cmd (or .bat, .exe, .ps1) from the scripts folder; End stream runs stream-stop. PowerShell scripts only run if your execution policy allows them, so a .cmd wrapper is the safest choice.'
+                    )
+                  : translate(
+                      'auto.components.settings.streamOverlay.streamModeCopy',
+                      'Go live (in the Twitch Chat tab) opens a chat window on your second screen and runs the stream-start script in the scripts folder; End stream runs stream-stop. Use the scripts to launch OBS or arrange windows.'
+                    )}
               </p>
             </div>
             <Button

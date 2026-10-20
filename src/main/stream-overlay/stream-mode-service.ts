@@ -2,6 +2,7 @@ import { access, constants } from 'node:fs/promises'
 import path from 'node:path'
 import type { BrowserWindow, Display, Rectangle } from 'electron'
 import { runProcess } from '../../shared/child-process/run-process'
+import { windowsPowerShellPath } from '../../shared/child-process/windows-system-binary'
 import type { StreamModeState, StreamOverlayPage } from '../../shared/stream-overlay'
 
 const HOOK_TIMEOUT_MS = 30_000
@@ -43,9 +44,30 @@ export function streamChatWindowBounds(display: Display): Rectangle {
   return { x: area.x + area.width - width, y: area.y + area.height - height, width, height }
 }
 
+/** Windows hook names in lookup order; `.ps1` last because the default execution policy blocks it. */
+export function streamHookFileNames(name: StreamHookName, platform: NodeJS.Platform): string[] {
+  return platform === 'win32'
+    ? [`${name}.cmd`, `${name}.bat`, `${name}.exe`, `${name}.ps1`]
+    : [name]
+}
+
+/** How to launch a hook; `.ps1` goes through Windows PowerShell without bypassing execution policy. */
+export function streamHookCommand(
+  file: string,
+  platform: NodeJS.Platform = process.platform
+): { program: string; args: string[] } {
+  if (platform === 'win32' && path.extname(file).toLowerCase() === '.ps1') {
+    return {
+      program: windowsPowerShellPath(),
+      args: ['-NoProfile', '-NonInteractive', '-File', file]
+    }
+  }
+  return { program: file, args: [] }
+}
+
 async function defaultRunHook(file: string, env: NodeJS.ProcessEnv): Promise<string | null> {
   const result = await runProcess({
-    program: file,
+    ...streamHookCommand(file),
     env: { ...process.env, ...env },
     cwd: path.dirname(file),
     timeoutMs: HOOK_TIMEOUT_MS
@@ -53,9 +75,22 @@ async function defaultRunHook(file: string, env: NodeJS.ProcessEnv): Promise<str
   if (result.timedOut) {
     return `${path.basename(file)} timed out after ${HOOK_TIMEOUT_MS / 1000}s.`
   }
-  if (result.code !== 0) {
-    const detail = result.stderr.trim().split('\n').at(-1)
-    return `${path.basename(file)} exited with code ${result.code}${detail ? `: ${detail}` : '.'}`
+  return describeStreamHookResult(path.basename(file), result.code, result.stderr)
+}
+
+/** Null on success; otherwise the line the Go live button shows. */
+export function describeStreamHookResult(
+  fileName: string,
+  code: number | null,
+  stderr: string
+): string | null {
+  // Why match stderr too: some PowerShell versions exit 0 when policy refuses to load the script.
+  if (/about_Execution_Policies/i.test(stderr)) {
+    return `${fileName} was blocked by the PowerShell execution policy. Call it from a ${path.parse(fileName).name}.cmd wrapper instead.`
+  }
+  if (code !== 0) {
+    const detail = stderr.trim().split(/\r?\n/).at(-1)
+    return `${fileName} exited with code ${code}${detail ? `: ${detail}` : '.'}`
   }
   return null
 }
@@ -172,9 +207,7 @@ export class StreamModeService {
   }
 
   private async findHook(name: StreamHookName): Promise<string | null> {
-    const candidates =
-      this.platform === 'win32' ? [`${name}.cmd`, `${name}.bat`, `${name}.exe`] : [name]
-    for (const candidate of candidates) {
+    for (const candidate of streamHookFileNames(name, this.platform)) {
       const file = path.join(this.options.hooksDirectory, candidate)
       try {
         await access(file, this.platform === 'win32' ? constants.F_OK : constants.X_OK)
