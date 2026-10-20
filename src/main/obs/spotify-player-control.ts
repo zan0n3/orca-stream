@@ -21,7 +21,10 @@ async function busctl(args: string[]): Promise<string> {
   return result.stdout.trim()
 }
 
-/** Spotify over MPRIS (D-Bus); null where MPRIS does not exist. */
+/**
+ * Spotify over MPRIS (D-Bus); null where MPRIS does not exist, so the Suno player ducks the OBS
+ * music input instead. Why no Windows SMTC: reaching it needs PowerShell + WinRT per call (EDR noise).
+ */
 export function createSpotifyPlayerControl(): MusicPlayerControl | null {
   if (process.platform !== 'linux') {
     return null

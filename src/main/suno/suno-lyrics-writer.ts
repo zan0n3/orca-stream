@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises'
 import { runProcess } from '../../shared/child-process/run-process'
+import { resolveClaudeCommand } from '../../shared/node-cli-command-resolution'
 import {
   parseSunoSongDraft,
   type SunoLyricsRequest,
@@ -25,7 +26,10 @@ export async function writeSunoLyrics(
   }
   await mkdir(workingDirectory, { recursive: true })
   const result = await runProcess({
-    program: process.env.ORCA_SUNO_CLAUDE_PATH || 'claude',
+    // Why resolve on Windows: a bare name misses claude.cmd shims and installs outside PATH.
+    program:
+      process.env.ORCA_SUNO_CLAUDE_PATH ||
+      (process.platform === 'win32' ? resolveClaudeCommand() : 'claude'),
     args: [
       '--print',
       '--safe-mode',
