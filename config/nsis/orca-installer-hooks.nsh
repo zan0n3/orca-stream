@@ -23,8 +23,20 @@
 ;
 ; Keep the extension list in sync with isOsOpenedDocumentName().
 ; ---------------------------------------------------------------------------
-!define MARKDOWN_PROGID "Orca.Markdown"
-!define TABULAR_PROGID "Orca.Tabular"
+; Orca Stream (config/electron-builder-orca-stream.config.cjs) installs beside stock Orca, so it
+; must never share, overwrite or delete stock Orca's ProgIDs or local daemon-host root.
+!ifndef PRODUCT_NAME
+  !error "orca-installer-hooks.nsh needs PRODUCT_NAME to pick its registry and data names"
+!endif
+!if "${PRODUCT_NAME}" == "Orca Stream"
+  !define MARKDOWN_PROGID "OrcaStream.Markdown"
+  !define TABULAR_PROGID "OrcaStream.Tabular"
+  !define ORCA_LOCAL_ROOT "Orca Stream"
+!else
+  !define MARKDOWN_PROGID "Orca.Markdown"
+  !define TABULAR_PROGID "Orca.Tabular"
+  !define ORCA_LOCAL_ROOT "Orca"
+!endif
 
 !macro ORCA_REGISTER_DOCUMENT_OPEN_WITH EXT PROGID
   WriteRegNone SHELL_CONTEXT "Software\Classes\${EXT}\OpenWithProgids" "${PROGID}"
@@ -95,14 +107,17 @@
     ${endIf}
     nsExec::Exec 'taskkill /F /IM "${APP_EXECUTABLE_FILENAME}" $2'
     Pop $0
-    nsExec::Exec 'taskkill /F /IM "orca-terminal-daemon.exe" $2'
-    Pop $0
+    ; Stock Orca only: Orca Stream never shipped that name, and the image name would match stock Orca's.
+    !if "${ORCA_LOCAL_ROOT}" == "Orca"
+      nsExec::Exec 'taskkill /F /IM "orca-terminal-daemon.exe" $2'
+      Pop $0
+    !endif
     Pop $2
     Pop $1
     Pop $0
     ; Give the OS a moment to release the image lock before removing the tree.
     Sleep 500
-    RMDir /r "$LOCALAPPDATA\Orca\daemon-host"
+    RMDir /r "$LOCALAPPDATA\${ORCA_LOCAL_ROOT}\daemon-host"
   ${endIf}
   ; Why outside the ${isUpdated} guard: customInstall rewrites these on every update, so
   ; dropping them during uninstallOldVersion is correct and keeps the pair symmetric.

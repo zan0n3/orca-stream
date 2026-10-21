@@ -33,13 +33,17 @@ fn main() {
         ))
     };
 
-    let electron_path = app_directory.join("Orca.exe");
-    if !electron_path.is_file() {
+    // Why two names: Orca Stream ships "Orca Stream.exe" so it never shares an image name with stock Orca.
+    let Some(electron_path) = ["Orca.exe", "Orca Stream.exe"]
+        .iter()
+        .map(|name| app_directory.join(name))
+        .find(|path| path.is_file())
+    else {
         fail(&format!(
             "Unable to locate Orca.exe next to \"{}\"",
             resources_directory.display()
-        ));
-    }
+        ))
+    };
 
     let cli_path: PathBuf = resources_directory
         .join("app.asar.unpacked")
