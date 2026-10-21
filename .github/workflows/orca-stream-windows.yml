@@ -1,0 +1,105 @@
+name: Orca Stream Windows Installer
+
+# Builds the unsigned Orca Stream NSIS installer (config/electron-builder-orca-stream.config.cjs)
+# and uploads it as a workflow artifact. Steps mirror dev-channel-win-build.yml minus the
+# release publishing, which this fork has no feed for.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - win-package
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orca-stream-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-win:
+    # Why windows-2022 and not windows-latest: windows-latest moved to the Windows 2025 / VS 2026
+    # image before node-gyp could detect VS 18, breaking native dependency install (see
+    # dev-channel-win-build.yml and release-cut.yml, which pin the same image).
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      # pnpm must be on PATH before setup-node so setup-node can locate the store.
+      - name: Setup pnpm
+        uses: pnpm/setup@v2
+        with:
+          install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: package.json
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            mobile/pnpm-lock.yaml
+
+      - name: Cache electron-builder downloads
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: electron-builder-win-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            electron-builder-win-
+
+      # Why retried: electron's postinstall pulls its binary from a CDN that returns transient 504s.
+      - name: Install dependencies
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: pnpm install --frozen-lockfile
+
+      # electron-builder's beforePack requires out/mobile-web, which resolves from mobile/node_modules.
+      - uses: ./.github/actions/install-mobile-dependencies
+
+      - name: Build Windows process-table addon for the relay
+        shell: bash
+        run: node config/scripts/build-windows-process-tree-relay-addon.mjs --arch=x64
+
+      - name: Build app
+        shell: bash
+        run: pnpm build:release
+
+      - name: Package installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          node config/scripts/ensure-native-runtime.mjs --runtime=electron
+          pnpm exec electron-builder --config config/electron-builder-orca-stream.config.cjs --win --publish never
+        env:
+          ORCA_BUILD_COMMIT: ${{ github.sha }}
+
+      - name: Verify installer identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f dist/orca-stream-windows-setup.exe
+          test -f "dist/win-unpacked/Orca Stream.exe"
+          node -e "const p=require('@electron/asar').extractFile('dist/win-unpacked/resources/app.asar','package.json');const j=JSON.parse(p);if(j.productName!=='Orca Stream'){console.error('productName is '+j.productName);process.exit(1)}console.log('productName:',j.productName)"
+          ls -la dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v7
+        with:
+          name: orca-stream-windows-setup
+          path: dist/orca-stream-windows-setup.exe
+          if-no-files-found: error
+          retention-days: 30
