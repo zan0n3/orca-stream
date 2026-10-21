@@ -10,6 +10,7 @@ import {
 } from 'node:fs'
 import { join, win32 as winPath } from 'node:path'
 import { getAppEnvironment } from '../../shared/app-environment'
+import { ORCA_STREAM_PRODUCT_NAME, isPackagedOrcaStream } from '../startup/orca-stream-product'
 import {
   buildDaemonHostManifest,
   daemonHostExeName,
@@ -139,7 +140,7 @@ function hostRootDir(): string {
   const localAppData = process.env.LOCALAPPDATA
   const base =
     typeof localAppData === 'string' && localAppData.length > 0
-      ? join(localAppData, LOCAL_HOST_ROOT_NAME)
+      ? join(localAppData, isPackagedOrcaStream() ? ORCA_STREAM_PRODUCT_NAME : LOCAL_HOST_ROOT_NAME)
       : getAppEnvironment().getPath('userData')
   return join(base, HOST_SUBDIR)
 }

@@ -110,6 +110,7 @@ import {
   handleMainProcessPreflightFailure
 } from './main-process-preflight-failure'
 import { ensureWindowsAppDataPath } from './windows-app-data-path'
+import { detectPackagedOrcaStream } from './orca-stream-product'
 
 export type MainProcessPreflightOptions = {
   focusExistingWindow: () => void
@@ -128,6 +129,7 @@ export function runMainProcessPreflight(options: MainProcessPreflightOptions): b
 }
 
 function initializeMainProcessPreflight(options: MainProcessPreflightOptions): boolean {
+  detectPackagedOrcaStream(app)
   // Why first: every step below, recovery and the instance lock included, may resolve userData.
   ensureWindowsAppDataPath(app)
   if (runProfileStateRecoveryPreflight()) {

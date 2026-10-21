@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import type { AppIdentity } from '../../shared/app-identity'
+import {
+  ORCA_STREAM_APP_ID,
+  ORCA_STREAM_PRODUCT_NAME,
+  isPackagedOrcaStream
+} from './orca-stream-product'
 
 const BASE_APP_NAME = 'Orca'
 const BASE_APP_USER_MODEL_ID = 'com.stablyai.orca'
@@ -66,16 +71,18 @@ export function getDevInstanceIdentity(
   env: NodeJS.ProcessEnv = process.env
 ): DevInstanceIdentity {
   if (!isDev) {
+    const orcaStream = isPackagedOrcaStream()
+    const appName = orcaStream ? ORCA_STREAM_PRODUCT_NAME : BASE_APP_NAME
     return {
-      name: BASE_APP_NAME,
-      appName: BASE_APP_NAME,
+      name: appName,
+      appName,
       isDev: false,
       devLabel: null,
       devBranch: null,
       devWorktreeName: null,
       devRepoRoot: null,
       dockBadgeLabel: null,
-      appUserModelId: BASE_APP_USER_MODEL_ID
+      appUserModelId: orcaStream ? ORCA_STREAM_APP_ID : BASE_APP_USER_MODEL_ID
     }
   }
 
